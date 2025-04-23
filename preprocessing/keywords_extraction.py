@@ -168,7 +168,8 @@ class KeywordsExtractor:
     
     def resolve_overlaps(self, matches):
         """
-        Removes overlapping matches, keeping the best match based on similarity and length.
+        Removes overlapping matches (one token/s can only be matched with one string in the db),
+        keeping the best match based on similarity and length.
 
         Args:
             matches (List[dict]): Raw matches from SimString.
@@ -176,7 +177,7 @@ class KeywordsExtractor:
         Returns:
             List[dict]: Non-overlapping filtered matches.
         """
-        
+
         final_matches = []
         used_tokens = set()
 
