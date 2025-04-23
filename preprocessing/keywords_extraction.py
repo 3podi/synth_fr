@@ -14,6 +14,22 @@ MAX_WINDOW = 5
 
 class KeywordsExtractor:
     def __init__(self, database_path=None, text_path=None, max_window=5, threshold=0.7):
+        """
+        Extracts keywords from text using n-gram similarity matching against a reference database.
+        
+        This class uses a SimString-based database with cosine similarity to find approximate 
+        matches of keyword-like phrases in a given input text. It uses spaCy for NLP preprocessing 
+        and filters valid spans based on part-of-speech tags and token rules.
+
+        Args:
+            database_path (str, optional): Path to an existing SimString database file.
+            text_path (str, optional): Path to a text file to build the keyword database from.
+            max_window (int, optional): Maximum number of tokens in a keyword span (default: 5).
+            threshold (float, optional): Cosine similarity threshold for matching (default: 0.7).
+
+        Raises:
+            AssertionError: If neither `database_path` nor `text_path` is provided.
+        """
         assert database_path is not None or text_path is not None
 
         self.max_window = max_window
@@ -29,6 +45,13 @@ class KeywordsExtractor:
 
     
     def build_database(self, path=None):
+        """
+        Builds a SimString database from a newline-separated text file.
+
+        Args:
+            path (str): Path to the text file containing keywords, one per line.
+        """
+
         # Read your file and add each line
         with open(path, "r", encoding="utf-8") as f:
             for line in f:
@@ -37,6 +60,21 @@ class KeywordsExtractor:
                     self.db.add(string.lower())
 
     def extract(self, text):
+        """
+        Extracts and matches keyword spans from the input text.
+
+        Args:
+            text (str): Input text to analyze.
+
+        Returns:
+            List[dict]: List of dictionaries with matched span info:
+                {
+                    'span': spaCy span,
+                    'match': matched string from DB,
+                    'similarity': float score
+                }
+        """
+
         doc = self.preprocess(text)
         spans = self.generate_valid_spans(doc, self.max_window)
         raw_matches = self.match_spans_with_simstring(spans, self.searcher, self.threshold)
@@ -44,9 +82,28 @@ class KeywordsExtractor:
         return final_matches
     
     def preprocess(self, text):
+        """
+        Applies NLP preprocessing to the text using spaCy.
+
+        Args:
+            text (str): Raw input string.
+
+        Returns:
+            spaCy Doc: Tokenized and parsed document.
+        """
         return nlp(text)
     
     def is_valid_sequence(self, span):
+        """
+        Checks if a span is a valid keyword candidate.
+
+        Args:
+            span (spaCy Span): Span of tokens to validate.
+
+        Returns:
+            bool: True if the span is valid for matching, False otherwise.
+        """
+
         tokens = list(span)
         if len(tokens) == 0 or len(tokens) > MAX_WINDOW:
             return False
@@ -61,6 +118,17 @@ class KeywordsExtractor:
         return True
     
     def generate_valid_spans(self, doc, window_size=MAX_WINDOW):
+        """
+        Generates valid keyword spans from the text based on a sliding window.
+
+        Args:
+            doc (spaCy Doc): Preprocessed text.
+            window_size (int): Max number of tokens to consider for a span.
+
+        Returns:
+            List[spaCy Span]: Valid spans to match against the database.
+        """
+
         valid_spans = []
         for sent in doc.sents:
             for i in range(len(sent)):
@@ -71,6 +139,18 @@ class KeywordsExtractor:
         return valid_spans
 
     def match_spans_with_simstring(self, spans, searcher, threshold=0.7):
+        """
+        Finds approximate matches for each span using SimString.
+
+        Args:
+            spans (List[spaCy Span]): Spans to match.
+            searcher (SimString Searcher): Searcher object to query the DB.
+            threshold (float): Cosine similarity threshold.
+
+        Returns:
+            List[dict]: Match information for each span.
+        """
+
         matches = []
 
         for span in spans:
@@ -87,6 +167,16 @@ class KeywordsExtractor:
         return matches
     
     def resolve_overlaps(self, matches):
+        """
+        Removes overlapping matches, keeping the best match based on similarity and length.
+
+        Args:
+            matches (List[dict]): Raw matches from SimString.
+
+        Returns:
+            List[dict]: Non-overlapping filtered matches.
+        """
+        
         final_matches = []
         used_tokens = set()
 
