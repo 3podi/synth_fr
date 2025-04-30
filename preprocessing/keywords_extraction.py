@@ -55,7 +55,7 @@ class KeywordsExtractor:
 
         # Read your file and add each line
         if text_path:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(text_path, "r", encoding="utf-8") as f:
                 for line in f:
                     string = line.strip()
                     if string:  # skip empty lines
