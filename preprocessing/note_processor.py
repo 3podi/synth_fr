@@ -46,8 +46,8 @@ def main(note_path, dictionary_path, output_file_path):
         writer = csv.writer(csvfile)
         reader = csv.reader(f)
         for i, row in tqdm(enumerate(reader)):
-            
-            if i != 0:
+                        
+            if i != 0 and row[2]>5:
                 text = row[-2]
                 text = text.replace('\n', ' ')
                 results = process_note(nlp(text), extractor)
@@ -55,8 +55,8 @@ def main(note_path, dictionary_path, output_file_path):
                 results = [match['match'] for match in results]
                 
                 new_row = row[:-2]
-                new_row = new_row.append(results)
-                new_row = new_row.append(row[-1])
+                new_row += [results]
+                new_row += [row[-1]]
 
                 writer.writerow(new_row)
 

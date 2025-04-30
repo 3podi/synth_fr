@@ -13,7 +13,7 @@ VALID_POS_START_END = {"CONJ", "ADP", "DET"}
 MAX_WINDOW = 5
 
 class KeywordsExtractor:
-    def __init__(self, database_path=None, text_path=None, list_definitions=None, max_window=5, threshold=0.7):
+    def __init__(self, database_path=None, text_path=None, list_definitions=None, max_window=5, threshold=0.8):
         """
         Extracts keywords from text using n-gram similarity matching against a reference database.
         
