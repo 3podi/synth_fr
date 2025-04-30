@@ -25,7 +25,7 @@ def process_note(note, matcher):
     #doc = nlp(text)
 
     # Extract sentences and check for negations
-    sentences_with_no_negations = [sent.text for sent in doc.sents if not contains_negation(sent)]
+    sentences_with_no_negations = [sent.text for sent in note.sents if not contains_negation(sent)]
 
     note = " ".join(sentences_with_no_negations)
 
@@ -50,7 +50,7 @@ def main(note_path, dictionary_path, output_file_path):
             if i != 0:
                 text = row[-2]
                 text = text.replace('\n', ' ')
-                results = process_note(text, extractor)
+                results = process_note(nlp(text), extractor)
 
                 results = [match['match'] for match in results]
                 
