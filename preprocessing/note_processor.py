@@ -2,6 +2,7 @@ from keywords_extraction import KeywordsExtractor
 import spacy
 import pickle
 from tqdm import tqdm
+import csv
 
 # Load the French spaCy model
 nlp = spacy.load("fr_core_news_sm")
