@@ -46,7 +46,7 @@ def main(note_path, dictionary_path, output_file_path):
         reader = csv.reader(f)
         for i, row in tqdm(enumerate(reader)):
             
-            if i != 0
+            if i != 0:
                 text = row[-2]
                 text = text.replace('\n', ' ')
                 results = process_note(text)
@@ -61,4 +61,4 @@ def main(note_path, dictionary_path, output_file_path):
 
 
 if __name__ =='__main__':
-    main(note_path='../data/crh_omop_2024/test_1000/test.csv', dictionary_path='aphp_final.pkl', output_file_path='prova.csv')
+    main(note_path='../../data/crh_omop_2024/test_1000/test.csv', dictionary_path='../aphp_final.pkl', output_file_path='../prova.csv')
