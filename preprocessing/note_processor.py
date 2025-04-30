@@ -50,7 +50,7 @@ def main(note_path, dictionary_path, output_file_path):
             if i != 0:
                 text = row[-2]
                 text = text.replace('\n', ' ')
-                results = process_note(text)
+                results = process_note(text, extractor)
 
                 results = [match['match'] for match in results]
                 
