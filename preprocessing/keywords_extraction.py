@@ -13,7 +13,7 @@ VALID_POS_START_END = {"CONJ", "ADP", "DET"}
 MAX_WINDOW = 5
 
 class KeywordsExtractor:
-    def __init__(self, database_path=None, text_path=None, max_window=5, threshold=0.7):
+    def __init__(self, database_path=None, text_path=None, list_definitions=None, max_window=5, threshold=0.7):
         """
         Extracts keywords from text using n-gram similarity matching against a reference database.
         
@@ -30,7 +30,7 @@ class KeywordsExtractor:
         Raises:
             AssertionError: If neither `database_path` nor `text_path` is provided.
         """
-        assert database_path is not None or text_path is not None
+        assert database_path is not None or text_path is not None or list_definitions is not None
 
         self.max_window = max_window
         self.threshold= threshold
@@ -44,12 +44,13 @@ class KeywordsExtractor:
         self.searcher = Searcher(self.db, CosineMeasure())
 
     
-    def build_database(self, path=None):
+    def build_database(self, path=None, list_definitions=None):
         """
         Builds a SimString database from a newline-separated text file.
 
         Args:
             path (str): Path to the text file containing keywords, one per line.
+            list_definitions (List, str): list of additional keywords
         """
 
         # Read your file and add each line
@@ -58,6 +59,12 @@ class KeywordsExtractor:
                 string = line.strip()
                 if string:  # skip empty lines
                     self.db.add(string.lower())
+        
+        if list_definitions:
+            for definition in list_definitions:
+                definition = definition.strip()
+                if definition:
+                    self.db.add(definition.lower())
 
     def extract(self, text):
         """
