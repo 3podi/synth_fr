@@ -39,26 +39,27 @@ class KeywordsExtractor:
         if database_path is not None:
             self.db.load(database_path)
         else:
-            self.build_database(text_path)
+            self.build_database(text_path, list_definitions)
         
         self.searcher = Searcher(self.db, CosineMeasure())
 
     
-    def build_database(self, path=None, list_definitions=None):
+    def build_database(self, text_path=None, list_definitions=None):
         """
         Builds a SimString database from a newline-separated text file.
 
         Args:
-            path (str): Path to the text file containing keywords, one per line.
+            text_path (str): Path to the text file containing keywords, one per line.
             list_definitions (List, str): list of additional keywords
         """
 
         # Read your file and add each line
-        with open(path, "r", encoding="utf-8") as f:
-            for line in f:
-                string = line.strip()
-                if string:  # skip empty lines
-                    self.db.add(string.lower())
+        if text_path:
+            with open(path, "r", encoding="utf-8") as f:
+                for line in f:
+                    string = line.strip()
+                    if string:  # skip empty lines
+                        self.db.add(string.lower())
         
         if list_definitions:
             for definition in list_definitions:
