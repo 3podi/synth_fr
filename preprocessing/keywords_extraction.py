@@ -113,7 +113,7 @@ class KeywordsExtractor:
         """
 
         tokens = list(span)
-        if len(tokens) == 0 or len(tokens) > self.window_size:
+        if len(tokens) == 0 or len(tokens) > self.max_window:
             return False
         if span.start == span.end:  # single-token span
             tok = tokens[0]
