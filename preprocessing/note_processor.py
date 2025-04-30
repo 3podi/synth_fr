@@ -35,7 +35,7 @@ def process_note(note, matcher):
 
 def main(note_path, dictionary_path, output_file_path):
 
-    with open('preprocessing/dictionaries/aphp_final.pkl', 'rb') as file:
+    with open(dictionary_path, 'rb') as file:
         definitions = pickle.load(file)
     definitions = definitions.keys()
 
