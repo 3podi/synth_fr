@@ -47,7 +47,7 @@ def main(note_path, dictionary_path, output_file_path):
         reader = csv.reader(f)
         for i, row in tqdm(enumerate(reader)):
                         
-            if i != 0 and row[2]>5:
+            if i != 0 and int(row[2])>5:
                 text = row[-2]
                 text = text.replace('\n', ' ')
                 results = process_note(nlp(text), extractor)
