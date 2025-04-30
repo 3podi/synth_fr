@@ -1,3 +1,9 @@
 *.csv
 *.xlsx
 Lexique383/
+medical_corpus_fr.ipynb
+*.pkl
+extract_mrconso.py
+*.zip
+*.RRF
+keywords.py
