@@ -7,6 +7,8 @@ from tqdm import tqdm
 import time
 from itertools import islice
 
+import pandas as pd
+
 # List of common French negation words
 negations = {"ne", "pas", "jamais", "n'", "n’", "non", "rien", "personne", "aucun"}
 
@@ -48,6 +50,10 @@ def batch_generator(filename, batch_size):
                 break
             yield batch
 
+def batch_generator2(filename, batch_size):
+    for chunk in pd.read_csv(filename, chunksize=batch_size):
+        yield chunk.values.tolist()
+
 def write_results(results, output_file_path, lock):
     """Write results to the output file with a lock for thread safety."""
     with lock:
@@ -69,7 +75,7 @@ def count_lines_in_csv(file_path):
 #    optimal_workers = max(1, cpu_count - 1)  # Leave one core free for other processes
 #    return optimal_workers
 
-def main(note_path, dictionary_path, output_file_path, batch_size=10):
+def main(note_path, dictionary_path, output_file_path, batch_size=100):
     # Determine the optimal number of workers
     t1 = time.time()
     NUM_WORKERS = 4
@@ -93,4 +99,6 @@ def main(note_path, dictionary_path, output_file_path, batch_size=10):
     write_results(results, output_file_path, lock)
 
 if __name__ =='__main__':
-    main(note_path='../../data/crh_omop_2024/test_1000/test.csv', dictionary_path='../aphp_final.pkl', output_file_path='../prova.csv')
+    bs = [1,10,50]
+    for batch in bs:
+        main(note_path='../../data/crh_omop_2024/test_1000/test.csv', dictionary_path='../aphp_final.pkl', output_file_path='../prova.csv', batch_size=batch)

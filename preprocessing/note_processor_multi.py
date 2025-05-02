@@ -6,6 +6,8 @@ import spacy
 from tqdm import tqdm
 import time
 
+import pandas as pd
+
 # List of common French negation words
 negations = {"ne", "pas", "jamais", "n'", "n’", "non", "rien", "personne", "aucun"}
 
@@ -48,6 +50,16 @@ def line_generator(filename):
         reader = csv.reader(f)
         for row in reader:
             yield row
+            
+def line_generator2(filename):
+    """Generator to yield lines from a file."""
+    with open(filename, 'r', newline='', encoding='utf-8') as f:
+        yield from csv.reader(f)
+
+def line_generator3(filename, chunksize=20):
+    for chunk in pd.read_csv(filename, chunksize=chunksize):
+        for row in chunk.itertuples(index=False, name=None):
+            yield list(row)
 
 def write_results(results, output_file_path, lock):
     """Write results to the output file."""
@@ -63,13 +75,13 @@ def main(note_path, dictionary_path, output_file_path):
     
     lock = Lock()
     number_lines = count_lines_in_csv(note_path)
-    print(number_lines)
-    print(ciao)
 
     # Initialize the pool with the global matcher
     with Pool(processes=NUM_WORKERS, initializer=initialize_nlp, initargs=(dictionary_path,)) as pool:
         # Process lines in parallel
-        results = list(tqdm(pool.imap_unordered(process_line, (row for row in line_generator(note_path) if row[2].isdigit() and int(row[2])> 5 )), total=number_lines, desc="Processing lines"))
+        #results = list(tqdm(pool.imap_unordered(process_line, (row for row in line_generator2(note_path) if row[2].isdigit() and int(row[2])> 5 )), total=number_lines, desc="Processing lines"))
+        
+        results = list(tqdm(pool.imap_unordered(process_line, (row for row in line_generator3(note_path) if row[2] and row[2] > 5 )), total=number_lines, desc="Processing lines"))
 
     t2 = time.time()
     print('Total time: ', (t2-t1)/60)
