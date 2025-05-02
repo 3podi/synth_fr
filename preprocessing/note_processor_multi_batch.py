@@ -69,7 +69,7 @@ def count_lines_in_csv(file_path):
 #    optimal_workers = max(1, cpu_count - 1)  # Leave one core free for other processes
 #    return optimal_workers
 
-def main(note_path, dictionary_path, output_file_path, batch_size=100):
+def main(note_path, dictionary_path, output_file_path, batch_size=10):
     # Determine the optimal number of workers
     t1 = time.time()
     NUM_WORKERS = 4
