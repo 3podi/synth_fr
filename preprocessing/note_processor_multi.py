@@ -1,9 +1,10 @@
 import csv
 import pickle
-from multiprocessing import Pool, Manager
+from multiprocessing import Pool, Lock
 from keywords_extraction import KeywordsExtractor
 import spacy
 from tqdm import tqdm
+import time
 
 # List of common French negation words
 negations = {"ne", "pas", "jamais", "n'", "n’", "non", "rien", "personne", "aucun"}
@@ -22,7 +23,7 @@ def initialize_nlp(dictionary_path):
     extractor = KeywordsExtractor(text_path=None, list_definitions=definitions)
 
 
-def process_line(row, extractor):
+def process_line(row):
     """Process the line to remove sentences with negations and extract keywords."""
     text = row[-2].replace('\n', ' ')
     doc = nlp(text)
@@ -32,7 +33,7 @@ def process_line(row, extractor):
     text = " ".join(sentences_with_no_negations)
 
     # Extract keywords
-    results = extractor(text)
+    results = extractor.extract(text)
     results = [match['match'] for match in results]
 
     # Prepare the new row
@@ -42,6 +43,12 @@ def process_line(row, extractor):
 
     return new_row
 
+def count_lines_in_csv(file_path):
+    """Count the number of lines in a CSV file efficiently"""
+    with open(file_path, 'r', newline='', encoding='utf-8') as file:
+        reader = csv.reader(file)
+        return sum(1 for row in reader)
+
 def line_generator(filename):
     """Generator to yield lines from a file."""
     with open(filename, 'r', newline='', encoding='utf-8') as f:
@@ -49,28 +56,30 @@ def line_generator(filename):
         for row in reader:
             yield row
 
-def write_results(results, output_file_path):
+def write_results(results, output_file_path, lock):
     """Write results to the output file."""
-    with open(output_file_path, 'a', newline='', encoding='utf-8') as csvfile:
-        writer = csv.writer(csvfile)
-        for result in results:
-            writer.writerow(result)
+    with lock:
+        with open(output_file_path, 'a', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile)
+            for result in results:
+                writer.writerow(result)
 
 def main(note_path, dictionary_path, output_file_path):
+    t1 = time.time()
     NUM_WORKERS = 4  # Limit the number of parallel processes
 
-    # Create a manager to share the extractor across processes
-    manager = Manager()
-    shared_extractor = manager.Namespace()
-    shared_extractor.extractor = None
+    lock = Lock()
+    number_lines = count_lines_in_csv(note_path)
 
     # Initialize the pool with the global matcher
     with Pool(processes=NUM_WORKERS, initializer=initialize_nlp, initargs=(dictionary_path,)) as pool:
         # Process lines in parallel
-        results = pool.starmap(process_line, [(row, shared_extractor.extractor) for row in tqdm(line_generator(note_path), desc="Processing lines") if row[2].isdigit() and int(row[2]) > 5])
+        results = list(tqdm(pool.imap_unordered(process_line, (row for row in line_generator(note_path) if row[2].isdigit() and int(row[2])> 5 )), total=number_lines, desc="Processing lines"))
 
+    t2 = time.time()
+    print('Total time: ', (t2-t1)/60)
     # Write results to the output file
-    write_results(results, output_file_path)
+    write_results(results, output_file_path, lock)
 
 if __name__ =='__main__':
     main(note_path='../../data/crh_omop_2024/test_1000/test.csv', dictionary_path='../aphp_final.pkl', output_file_path='../prova.csv')
