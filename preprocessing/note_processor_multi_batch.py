@@ -1,3 +1,11 @@
+import csv
+import pickle
+from multiprocessing import Pool, Lock
+from keywords_extraction import KeywordsExtractor
+import spacy
+from tqdm import tqdm
+import time
+
 # List of common French negation words
 negations = {"ne", "pas", "jamais", "n'", "n’", "non", "rien", "personne", "aucun"}
 
@@ -21,7 +29,7 @@ def process_batch(batch):
     docs = nlp.pipe(texts)
 
     processed_rows = []
-    for row, doc in zip(rows, docs):
+    for row, doc in zip(batch, docs):
         filtered_text = ' '.join(sent.text for sent in doc.sents if not contains_negation(sent))
         keywords = [match['match'] for match in extractor.extract(filtered_text)]
         new_row = row[:-2] + [keywords, row[-1]]
@@ -51,9 +59,10 @@ def write_results(results, output_file_path, lock):
                 writer.writerow(result)
 
 def count_lines_in_csv(file_path):
-    """Count the number of lines in a CSV file efficiently."""
+    """Count the number of lines in a CSV file efficiently"""
     with open(file_path, 'r', newline='', encoding='utf-8') as file:
-        return sum(1 for line in file)
+        reader = csv.reader(file)
+        return sum(1 for row in reader)
 
 #def get_optimal_workers():
 #    """Determine the optimal number of worker processes."""
@@ -62,8 +71,9 @@ def count_lines_in_csv(file_path):
 #    optimal_workers = max(1, cpu_count - 1)  # Leave one core free for other processes
 #    return optimal_workers
 
-def main(note_path, dictionary_path, output_file_path, batch_size=10):
+def main(note_path, dictionary_path, output_file_path, batch_size=100):
     # Determine the optimal number of workers
+    t1 = time.time()
     NUM_WORKERS = 4
 
     # Count the total number of lines to process
@@ -78,7 +88,9 @@ def main(note_path, dictionary_path, output_file_path, batch_size=10):
         results = []
         for batch_results in tqdm(pool.imap_unordered(process_batch, batch_generator(note_path, batch_size)), total=total_lines // batch_size, desc="Processing lines"):
             results.extend(batch_results)
-
+    
+    t2 = time.time()
+    print('Execution time: ', (t2-t1)/60)
     # Write results to the output file
     write_results(results, output_file_path, lock)
 
