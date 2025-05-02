@@ -25,7 +25,7 @@ class KeywordsExtractor:
             database_path (str, optional): Path to an existing SimString database file.
             text_path (str, optional): Path to a text file to build the keyword database from.
             max_window (int, optional): Maximum number of tokens in a keyword span (default: 5).
-            threshold (float, optional): Cosine similarity threshold for matching (default: 0.7).
+            threshold (float, optional): Cosine similarity threshold for matching (default: 0.8).
 
         Raises:
             AssertionError: If neither `database_path` nor `text_path` is provided.
