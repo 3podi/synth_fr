@@ -60,9 +60,11 @@ def write_results(results, output_file_path, lock):
 def main(note_path, dictionary_path, output_file_path):
     t1 = time.time()
     NUM_WORKERS = 4  # Limit the number of parallel processes
-
+    
     lock = Lock()
     number_lines = count_lines_in_csv(note_path)
+    print(number_lines)
+    print(ciao)
 
     # Initialize the pool with the global matcher
     with Pool(processes=NUM_WORKERS, initializer=initialize_nlp, initargs=(dictionary_path,)) as pool:
@@ -76,3 +78,4 @@ def main(note_path, dictionary_path, output_file_path):
 
 if __name__ =='__main__':
     main(note_path='../../data/crh_omop_2024/test_1000/test.csv', dictionary_path='../aphp_final.pkl', output_file_path='../prova.csv')
+    #main(note_path='../../data/crh_omop_2024/all/test.csv', dictionary_path='../aphp_final.pkl', output_file_path='../prova.csv')
