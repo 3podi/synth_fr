@@ -5,6 +5,7 @@ from keywords_extraction import KeywordsExtractor
 import spacy
 from tqdm import tqdm
 import time
+from itertools import islice
 
 # List of common French negation words
 negations = {"ne", "pas", "jamais", "n'", "n’", "non", "rien", "personne", "aucun"}
@@ -38,16 +39,13 @@ def process_batch(batch):
     return processed_rows
 
 def batch_generator(filename, batch_size):
-    """Generator to yield batches of lines from a file."""
-    batch = []
-    with open(filename, 'r', newline='', encoding='utf-8') as f:
+    """CSV reader with batching via islice."""
+    with open(filename, 'r', encoding='utf-8', newline='') as f:
         reader = csv.reader(f)
-        for row in reader:
-            batch.append(row)
-            if len(batch) >= batch_size:
-                yield batch
-                batch = []
-        if batch:
+        while True:
+            batch = list(islice(reader, batch_size))
+            if not batch:
+                break
             yield batch
 
 def write_results(results, output_file_path, lock):
