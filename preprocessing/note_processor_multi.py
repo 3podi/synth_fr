@@ -21,6 +21,7 @@ def initialize_nlp(dictionary_path):
     definitions = definitions.keys()
     extractor = KeywordsExtractor(text_path=None, list_definitions=definitions)
 
+
 def process_line(row, extractor):
     """Process the line to remove sentences with negations and extract keywords."""
     text = row[-2].replace('\n', ' ')
@@ -31,7 +32,7 @@ def process_line(row, extractor):
     text = " ".join(sentences_with_no_negations)
 
     # Extract keywords
-    results = process_note(nlp(text), extractor)
+    results = extractor(text)
     results = [match['match'] for match in results]
 
     # Prepare the new row
