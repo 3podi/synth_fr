@@ -22,26 +22,19 @@ def initialize_nlp(dictionary_path):
     definitions = definitions.keys()
     extractor = KeywordsExtractor(text_path=None, list_definitions=definitions)
 
-
 def process_line(row):
-    """Process the line to remove sentences with negations and extract keywords."""
-    text = row[-2].replace('\n', ' ')
-    doc = nlp(text)
+    """Remove negated sentences and extract keywords."""
+    # Clean and parse text
+    doc = nlp(row[-2].replace('\n', ' '))
 
-    # Extract sentences and check for negations
-    sentences_with_no_negations = [sent.text for sent in doc.sents if not contains_negation(sent)]
-    text = " ".join(sentences_with_no_negations)
+    # Filter out sentences with negations in a generator
+    filtered_text = ' '.join(sent.text for sent in doc.sents if not contains_negation(sent))
 
     # Extract keywords
-    results = extractor.extract(text)
-    results = [match['match'] for match in results]
+    keywords = [match['match'] for match in extractor.extract(filtered_text)]
 
-    # Prepare the new row
-    new_row = row[:-2]
-    new_row += [results]
-    new_row += [row[-1]]
-
-    return new_row
+    # Construct new row
+    return row[:-2] + [keywords, row[-1]]
 
 def count_lines_in_csv(file_path):
     """Count the number of lines in a CSV file efficiently"""
