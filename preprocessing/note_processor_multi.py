@@ -1,3 +1,11 @@
+import os
+
+#conda_env = os.getenv('CONDA_DEFAULT_ENV')
+#if conda_env != 'aphp_env':
+#    print(f"Warning: You're not in the 'aphp_env' environment! You're in '{conda_env}'")
+#else:
+#    print(f"You're in the correct Conda environment: '{conda_env}'")
+
 import csv
 import pickle
 from multiprocessing import Pool, Lock
@@ -5,8 +13,10 @@ from keywords_extraction import KeywordsExtractor
 import spacy
 from tqdm import tqdm
 import time
+import argparse
 
 import pandas as pd
+
 
 # List of common French negation words
 negations = {"ne", "pas", "jamais", "n'", "n’", "non", "rien", "personne", "aucun"}
@@ -75,7 +85,8 @@ def main(note_path, dictionary_path, output_file_path):
     
     lock = Lock()
     number_lines = count_lines_in_csv(note_path)
-
+    print(number_lines)
+    print(ciqo)
     # Initialize the pool with the global matcher
     with Pool(processes=NUM_WORKERS, initializer=initialize_nlp, initargs=(dictionary_path,)) as pool:
         # Process lines in parallel
@@ -89,5 +100,15 @@ def main(note_path, dictionary_path, output_file_path):
     write_results(results, output_file_path, lock)
 
 if __name__ =='__main__':
+    
+    #parser = argparse.ArgumentParser(descrption= 'Setting note dictionary and output path')
+    #parser.add_argument(note_path, type=str, help='Path to the notes')
+    #parser.add_argument(dictionary_path, type=str, help='Path to dictionary for keywords extraction')
+    #parser.add_argument(output_file_path, type=str, help='Output file path')
+    
+    #args = parser.parse_args()
+    #print(args)
+    #main(note_path=args.note_path, dictionary_path=args.dictionary_path, output_file_path=args.output_file_path)
+    
     main(note_path='../../data/crh_omop_2024/test_1000/test.csv', dictionary_path='../aphp_final.pkl', output_file_path='../prova.csv')
     #main(note_path='../../data/crh_omop_2024/all/test.csv', dictionary_path='../aphp_final.pkl', output_file_path='../prova.csv')
