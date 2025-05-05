@@ -15,32 +15,6 @@ MAX_WINDOW = 5
 
 
 class SimstringWriter:
-    def __init__(self, path: Union[str, Path]):
-        os.makedirs(path, exist_ok=True)
-        self.path = path
-
-    def __enter__(self):
-        self.db_path = os.path.join(self.path, "terms.simstring")
-        self.db = simstring.writer(self.db_path, 3, False, True)
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.db.close()
-
-    def insert(self, term: str):
-        self.db.insert(term)
-
-
-import os
-import simstring
-import spacy
-from typing import List, Union
-
-nlp = spacy.load("en_core_web_sm")
-VALID_POS_START_END = {"DET", "CCONJ", "ADP"}  # example values, adjust as needed
-MAX_WINDOW = 5  # default value for max_window
-
-class SimstringWriter:
     def __init__(self, db_path):
         self.db_path = db_path
         self.writer = None
