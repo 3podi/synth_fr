@@ -59,8 +59,8 @@ class KeywordsExtractor:
         if database_dir:
             db_path = os.path.join(database_dir, db_file)
         else:
-            db_path = db_file
-            self.build_database(db_path, text_path, list_definitions)
+            if not os.path.exists(os.path.join(database_dir, db_file)):
+                self.build_database(os.path.join(database_dir, db_file), text_path, list_definitions)
 
         self.reader = simstring.reader(db_path)
         self.reader.measure = getattr(simstring, similarity_measure)
