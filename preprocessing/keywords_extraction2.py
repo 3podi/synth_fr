@@ -56,11 +56,15 @@ class KeywordsExtractor:
 
         db_file = "terms.simstring"
 
-        if database_dir:
-            db_path = os.path.join(database_dir, db_file)
+        # If no database_dir provided, create default folder
+        if database_dir is None:
+            database_dir = os.path.join(os.getcwd(), "simstring_db")
+            os.makedirs(database_dir, exist_ok=True)
+            self.build_database(os.path.join(database_dir, db_file), text_path, list_definitions)
         else:
             if not os.path.exists(os.path.join(database_dir, db_file)):
                 self.build_database(os.path.join(database_dir, db_file), text_path, list_definitions)
+
 
         self.reader = simstring.reader(db_path)
         self.reader.measure = getattr(simstring, similarity_measure)
