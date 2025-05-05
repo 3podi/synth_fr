@@ -66,7 +66,7 @@ class KeywordsExtractor:
                 self.build_database(os.path.join(database_dir, db_file), text_path, list_definitions)
 
 
-        self.reader = simstring.reader(db_path)
+        self.reader = simstring.reader(os.path.join(database_dir, db_file))
         self.reader.measure = getattr(simstring, similarity_measure)
         self.reader.threshold = threshold
 
