@@ -48,6 +48,7 @@ def main(note_path, dictionary_path, output_file_path):
     # Process each note sequentially
     results = []
     for _, row in tqdm(df.iterrows(), total=len(df), desc="Processing notes"):
+        row = row.tolist()
         if row[2] > 5: 
             results.append(process_note(row, nlp, extractor))
 

@@ -40,7 +40,7 @@ def main(note_path, dictionary_path, output_file_path):
         definitions = pickle.load(file)
     definitions = definitions.keys()
 
-    extractor = KeywordsExtractor(text_path=None, list_definitions=definitions, max_window=10)   
+    extractor = KeywordsExtractor(text_path=None, list_definitions=definitions, max_window=5)   
 
     with open(note_path, 'r', newline='', encoding='utf-8') as f,  open(output_file_path, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
