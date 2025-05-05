@@ -76,12 +76,12 @@ class KeywordsExtractor:
                     for line in f:
                         term = line.strip()
                         if term:
-                            db.insert(f"##{term.lower()}##")
+                            db.insert(term.lower())
             if list_definitions:
                 for term in list_definitions:
                     term = term.strip()
                     if term:
-                        db.insert(f"##{term.lower()}##")
+                        db.insert(term.lower())
 
     def extract(self, text: str):
         """
