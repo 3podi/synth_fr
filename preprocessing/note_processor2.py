@@ -4,6 +4,7 @@ import pandas as pd
 import spacy
 from tqdm import tqdm
 from keywords_extraction import KeywordsExtractor
+import time
 
 # List of common French negation words
 negations = {"ne", "pas", "jamais", "n'", "n’", "non", "rien", "personne", "aucun"}
@@ -32,6 +33,8 @@ def write_results(results, output_file_path):
 
 def main(note_path, dictionary_path, output_file_path):
 
+    t1 = time.time()
+
     # Initialize the spaCy model and extractor
     nlp = spacy.load("fr_core_news_sm")
     with open(dictionary_path, 'rb') as file:
@@ -48,6 +51,8 @@ def main(note_path, dictionary_path, output_file_path):
         if row[2] > 5: 
             results.append(process_note(row, nlp, extractor))
 
+    t2 = time.time()
+    print('Total time: ', (t2-t1)/60)
     # Write results to the output file
     write_results(results, output_file_path)
 
