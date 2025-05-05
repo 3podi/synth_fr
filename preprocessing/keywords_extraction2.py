@@ -124,7 +124,7 @@ class KeywordsExtractor:
             text = span.text.lower().strip()
             if not text:
                 continue
-            candidates = self.reader.retrieve(f"##{text}##")
+            candidates = self.reader.retrieve(text)
             for c in candidates:
                 matches.append({
                     "span": span,
