@@ -4,6 +4,9 @@ import os
 import ast
 import pickle
 
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 def compute_confusion_matrix(y_pred, y_true):
     pred_set = set(y_pred)
     true_set = set(y_true)
@@ -92,6 +95,46 @@ def total_metrics(results_folder):
 
         precision, recall, f1 = compute_metrics(tp, fp, fn)
         print(f'Precision: {precision} - Recall: {recall} - f1: {f1}')
+
+def total_metrics_plot(results_folder):
+    metrics_path = os.path.join(results_folder, 'with_metrics')
+    files = [f for f in os.listdir(metrics_path) if f.endswith('_metrics.csv')]
+
+    records = []
+
+    for file in files:
+        try:
+            param1 = float(file.split('_')[1])  # e.g., 0.9
+            param2 = int(file.split('_')[2])    # e.g., 5
+        except (IndexError, ValueError):
+            print(f"Skipping file {file} due to unexpected naming format.")
+            continue
+
+        df = pd.read_csv(os.path.join(metrics_path, file))
+        tp = df['TP'].sum()
+        fp = df['FP'].sum()
+        fn = df['FN'].sum()
+
+        precision, recall, f1 = compute_metrics(tp, fp, fn)
+        records.append((param1, param2, precision, recall, f1))
+
+    # Convert to DataFrame for plotting
+    results_df = pd.DataFrame(records, columns=['param1', 'param2', 'precision', 'recall', 'f1'])
+
+    # Pivot for heatmap
+    heatmap_data = results_df.pivot(index='param2', columns='param1', values='f1')
+
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(heatmap_data, annot=True, fmt=".3f", cmap='viridis')
+    plt.title("F1 Score Heatmap")
+    plt.xlabel("Parameter 1")
+    plt.ylabel("Parameter 2")
+    plt.tight_layout()
+    # Save the plot
+    save_path = os.path.join(results_folder, "f1_heatmap.png")
+    plt.savefig(save_path)
+    print(f"Plot saved to: {save_path}")
+    #plt.show()
 
 
 if __name__ == '__main__':
