@@ -127,10 +127,10 @@ def total_metrics_plot(results_folder):
         subset = results_df[results_df['param2'] == param2_val].sort_values('param1')
         plt.plot(subset['param1'], subset['f1'], marker='o', label=f'param2 = {param2_val}')
 
-    plt.xlabel("Parameter 1")
+    plt.xlabel("Similarity threshold")
     plt.ylabel("F1 Score")
-    plt.title("F1 Score vs Parameter 1")
-    plt.legend(title="Parameter 2")
+    plt.title("F1 Score vs Similarity threshold")
+    plt.legend(title="Max window")
     plt.grid(True)
     plt.tight_layout()
 
