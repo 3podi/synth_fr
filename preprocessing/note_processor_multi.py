@@ -102,7 +102,7 @@ if __name__ =='__main__':
     parser.add_argument('dictionary_path', type=str, help='Path to dictionary for keywords extraction')
     parser.add_argument('output_file_path', type=str, help='Path to folder where to store the results')
     parser.add_argument('--thresholds', nargs='+', type=float, help='List of similarity thresholds')
-    parser.add_argument('--max_windows', nargs='+', type=in, help='List of max windows values')
+    parser.add_argument('--max_windows', nargs='+', type=int, help='List of max windows values')
     
     args = parser.parse_args()
     main(note_path=args.note_path, dictionary_path=args.dictionary_path, output_file_path=args.output_file_path)
