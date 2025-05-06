@@ -86,11 +86,11 @@ def total_metrics(results_folder):
         print(file)
         df = pd.read_csv(os.path.join(results_folder,'with_metrics',file))
 
-        tp_list = df['TP'].tolist()
-        fp_list = df['FP'].tolist()
-        fn_list = df['FN'].tolist()
+        tp = sum(df['TP'].tolist())
+        fp = sum(df['FP'].tolist())
+        fn = sum(df['FN'].tolist())
 
-        precision, recall, f1 = compute_metrics(tp_list, fp_list, fn_list)
+        precision, recall, f1 = compute_metrics(tp, fp, fn)
         print(f'Precision: {precision} - Recall: {recall} - f1: {f1}')
 
 
