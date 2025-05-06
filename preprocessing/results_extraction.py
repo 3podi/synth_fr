@@ -3,6 +3,7 @@ import argparse
 import os
 import ast
 import pickle
+import re
 
 import matplotlib.pyplot as plt
 import seaborn as sns
