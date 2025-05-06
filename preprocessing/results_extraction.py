@@ -87,7 +87,7 @@ def total_metrics(results_folder):
         df = pd.read_csv(os.path.join(results_folder,'with_metrics',file))
 
         tp_list = df['TP'].tolist()
-        fp_lst = df['FP'].tolist()
+        fp_list = df['FP'].tolist()
         fn_list = df['FN'].tolist()
 
         precision, recall, f1 = compute_metrics(tp_list, fp_list, fn_list)
