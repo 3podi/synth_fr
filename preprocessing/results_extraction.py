@@ -21,6 +21,10 @@ def compute_metrics(tp, fp, fn):
     f1 = 2 * precision * recall / (precision + recall) if precision + recall > 0 else 0
     return precision, recall, f1
 
+def remove_symbols(text):
+    # Remove everything that's not a letter, digit, or whitespace
+    return re.sub(r'[^\w\s]', '', text)
+
 def main(results_folder, dictionary_path):
     extractions = [f for f in os.listdir(results_folder) if f.endswith('.csv')]
 
@@ -52,13 +56,13 @@ def main(results_folder, dictionary_path):
             # Process true codes
             if isinstance(true_codes, str):
                 true_codes = true_codes.strip().split()
-                true_codes = [code[0] for code in true_codes]
+                true_codes = [remove_symbols(code) for code in true_codes]
             else:
                 true_codes = []
 
             # Handle case with no predictions
             predicted_codes = [
-                corpus[match]
+                remove_symbols(corpus[match])
                 for match in predicted_expressions
                 if match in corpus and corpus[match]
             ]
