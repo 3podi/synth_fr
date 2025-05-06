@@ -57,11 +57,10 @@ def main(results_folder, dictionary_path):
                 true_codes = []
 
             # Handle case with no predictions
-            predicted_codes = [corpus[match] for match in predicted_expressions if match in corpus]
             predicted_codes = [
-                corpus[match][0]
+                corpus[match]
                 for match in predicted_expressions
-                if match in corpus and corpus[match] and corpus[match][0] is not None
+                if match in corpus and corpus[match]
             ]
             
             tp, fp, fn = compute_confusion_matrix(predicted_codes, true_codes)
