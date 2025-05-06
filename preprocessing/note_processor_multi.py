@@ -65,6 +65,8 @@ def line_generator3(filename, chunksize=20):
 
 def write_results(results, output_file_path, lock):
     """Write results to the output file."""
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
     with lock:
         with open(output_file_path, 'a', newline='', encoding='utf-8') as csvfile:
             writer = csv.writer(csvfile)
@@ -95,31 +97,26 @@ def main(note_path, dictionary_path, output_file_path,max_window=5,threshold=0.8
     
 if __name__ =='__main__':
     
-    #parser = argparse.ArgumentParser(descrption= 'Setting note dictionary and output path')
-    #parser.add_argument(note_path, type=str, help='Path to the notes')
-    #parser.add_argument(dictionary_path, type=str, help='Path to dictionary for keywords extraction')
-    #parser.add_argument(output_file_path, type=str, help='Output file path')
+    parser = argparse.ArgumentParser(descrption= 'Setting note dictionary and output path')
+    parser.add_argument('note_path', type=str, help='Path to the notes')
+    parser.add_argument('dictionary_path', type=str, help='Path to dictionary for keywords extraction')
+    parser.add_argument('output_file_path', type=str, help='Path to folder where to store the results')
+    parser.add_argument('--thresholds', nargs='+', type=float, help='List of similarity thresholds')
+    parser.add_argument('--max_windows', nargs='+', type=in, help='List of max windows values')
     
-    #args = parser.parse_args()
-    #main(note_path=args.note_path, dictionary_path=args.dictionary_path, output_file_path=args.output_file_path)
+    args = parser.parse_args()
+    main(note_path=args.note_path, dictionary_path=args.dictionary_path, output_file_path=args.output_file_path)
     
-    #note_path = args.note_path
-    #dict_path = args.dictionary_path
-    #output_path = args.output_file_path
+    note_path = args.note_path
+    dict_path = args.dictionary_path
+    output_path = args.output_file_path
     
-    thresholds = [0.6,0.7,0.8,0.9]
-    windows = [2,5,7]
-    results = {}
+    thresholds = args.thresholds
+    windows = args.max_windows
     
     for th in thresholds:
         for w in windows:
             print(f'Running: th={th} window={w}')
-            output_path = '../results_sweep/results_' + str(th) + '_' + str(w)+'.csv'
-            t = main(note_path='../../data/crh_omop_2024/test_1000/train.csv', dictionary_path='../aphp_final_no_single_letter.pkl', output_file_path=output_path, max_window=w, threshold=th)
-            results[(th,w)] = t
+            output_path = output_path + '/results_' + str(th) + '_' + str(w)+'.csv'
+            t = main(note_path=note_path, dictionary_path=dict_path, output_file_path=output_path, max_window=w, threshold=th)
     
-    with open('../results_sweep/time.json', 'w') as f:
-        json.dump(results, f)
-    
-            
-    #main(note_path='../../data/crh_omop_2024/all/test.csv', dictionary_path='../aphp_final.pkl', output_file_path='../prova.csv')
