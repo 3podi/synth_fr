@@ -1,6 +1,7 @@
 import pandas as pd
 import argparse
 import os
+import ast
 import pickle
 
 def compute_confusion_matrix(y_pred, y_true):
@@ -22,6 +23,8 @@ def main(results_folder, dictionary_path):
 
     with open(dictionary_path, 'rb') as f:
         corpus = pickle.load(f)
+    
+    corpus = {k.lower(): v for k, v in corpus.items()}
 
     for extr in extractions:
         path = os.path.join(results_folder, extr)
@@ -35,6 +38,14 @@ def main(results_folder, dictionary_path):
             predicted_expressions = row.iloc[-2]
             true_codes = row.iloc[-1]
 
+            # Convert stringified list to actual list safely
+            try:
+                predicted_expressions = ast.literal_eval(predicted_expressions)
+                if not isinstance(predicted_expressions, list):
+                    predicted_expressions = []
+            except (ValueError, SyntaxError):
+                predicted_expressions = []
+            
             # Process true codes
             if isinstance(true_codes, str):
                 true_codes = true_codes.strip().split()
@@ -43,12 +54,13 @@ def main(results_folder, dictionary_path):
                 true_codes = []
 
             # Handle case with no predictions
-            predicted_codes = []
-            if isinstance(predicted_expressions, str) and predicted_expressions.strip():
-                #predicted_codes = [corpus[match][0] for match in matches if match in corpus]
-                predicted_codes = [corpus[match][0] for match in predicted_expressions]
-
-
+            predicted_codes = [corpus[match] for match in predicted_expressions if match in corpus]
+            predicted_codes = [
+                corpus[match][0]
+                for match in predicted_expressions
+                if match in corpus and corpus[match] and corpus[match][0] is not None
+            ]
+            
             tp, fp, fn = compute_confusion_matrix(predicted_codes, true_codes)
             tp_list.append(tp)
             fp_list.append(fp)
