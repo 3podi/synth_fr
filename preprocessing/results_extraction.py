@@ -77,10 +77,31 @@ def main(results_folder, dictionary_path):
         new_path = os.path.join(metrics_folder, new_filename)
         df.to_csv(new_path, index=False)
 
+def total_metrics(results_folder):
+
+    files = os.listdir(os.path.join(results_folder,'with_metrics'))
+    files = [file for file in files if file.endswith('_metrics.csv')]
+
+    for file in files:
+        print(file)
+        df = pd.read_csv(os.path.join(results_folder,'with_metrics',file))
+
+        tp_list = df['TP'].tolist()
+        fp_lst = df['FP'].tolist()
+        fn_list = df['FN'].tolist()
+
+        precision, recall, f1 = compute_metrics(tp_list, fp_list, fn_list)
+        print(f'Precision: {precision} - Recall: {recall} - f1: {f1}')
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Evaluate predictions')
     parser.add_argument('results_folder', type=str, help='Path to the result folder')
     parser.add_argument('dictionary_path', type=str, help='Path to the dictionary (pickle format)')
+    parser.add_argument('--total_metrics_only', action='store_true', help='Optionally compute final metrics only')
     args = parser.parse_args()
 
-    main(results_folder=args.results_folder, dictionary_path=args.dictionary_path)
+    if not args.total_metrics_only:
+        main(results_folder=args.results_folder, dictionary_path=args.dictionary_path)
+    else:
+        total_metrics(results_folder=args.results_folder)
