@@ -47,7 +47,8 @@ def main(results_folder, dictionary_path):
             predicted_codes = []
             if isinstance(predicted_expressions, str) and predicted_expressions.strip():
                 matches = predicted_expressions.strip().split()
-                predicted_codes = [corpus[match] for match in matches if match in corpus]
+                #predicted_codes = [corpus[match] for match in matches if match in corpus]
+                predicted_codes = [corpus[match] for match in matches]
             predicted_codes = [code[0] for code in predicted_codes]
 
 
