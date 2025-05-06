@@ -108,7 +108,7 @@ if __name__ =='__main__':
     #output_path = args.output_file_path
     
     thresholds = [0.6,0.7,0.8,0.9]
-    windows = [20]
+    windows = [2,5,7]
     results = {}
     
     for th in thresholds:
