@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -t 2:00:00
+#SBATCH -t 3:00:00
 #SBATCH -N1-1
 #SBATCH -c4
 #SBATCH --mem=10000
