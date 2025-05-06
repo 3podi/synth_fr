@@ -150,4 +150,4 @@ if __name__ == '__main__':
     if not args.total_metrics_only:
         main(results_folder=args.results_folder, dictionary_path=args.dictionary_path)
     else:
-        total_metrics(results_folder=args.results_folder)
+        total_metrics_plot(results_folder=args.results_folder)
