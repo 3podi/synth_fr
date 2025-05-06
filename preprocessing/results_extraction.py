@@ -41,11 +41,15 @@ def main(results_folder, dictionary_path):
             else:
                 true_codes = []
 
+            true_codes = [code[0] for code in true_codes]
+
             # Handle case with no predictions
             predicted_codes = []
             if isinstance(predicted_expressions, str) and predicted_expressions.strip():
                 matches = predicted_expressions.strip().split()
                 predicted_codes = [corpus[match] for match in matches if match in corpus]
+            predicted_codes = [code[0] for code in predicted_codes]
+
 
             tp, fp, fn = compute_confusion_matrix(predicted_codes, true_codes)
             tp_list.append(tp)
