@@ -116,25 +116,28 @@ def total_metrics_plot(results_folder):
         fn = df['FN'].sum()
 
         precision, recall, f1 = compute_metrics(tp, fp, fn)
-        records.append((param1, param2, precision, recall, f1))
+        records.append((param1, param2, f1))
 
     # Convert to DataFrame for plotting
-    results_df = pd.DataFrame(records, columns=['param1', 'param2', 'precision', 'recall', 'f1'])
+    results_df = pd.DataFrame(records, columns=['param1', 'param2', 'f1'])
 
-    # Pivot for heatmap
-    heatmap_data = results_df.pivot(index='param2', columns='param1', values='f1')
-
+    # Create the line plot
     plt.figure(figsize=(8, 6))
-    sns.heatmap(heatmap_data, annot=True, fmt=".3f", cmap='viridis')
-    plt.title("F1 Score Heatmap")
+    for param2_val in sorted(results_df['param2'].unique()):
+        subset = results_df[results_df['param2'] == param2_val].sort_values('param1')
+        plt.plot(subset['param1'], subset['f1'], marker='o', label=f'param2 = {param2_val}')
+
     plt.xlabel("Parameter 1")
-    plt.ylabel("Parameter 2")
+    plt.ylabel("F1 Score")
+    plt.title("F1 Score vs Parameter 1")
+    plt.legend(title="Parameter 2")
+    plt.grid(True)
     plt.tight_layout()
-    # Save the plot
-    save_path = os.path.join(results_folder, "f1_heatmap.png")
+
+    # Save plot
+    save_path = os.path.join(results_folder, "f1_vs_param1_by_param2.png")
     plt.savefig(save_path)
     print(f"Plot saved to: {save_path}")
-    #plt.show()
 
 
 if __name__ == '__main__':
