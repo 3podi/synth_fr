@@ -107,8 +107,8 @@ if __name__ =='__main__':
     #dict_path = args.dictionary_path
     #output_path = args.output_file_path
     
-    thresholds = [0.7]
-    windows = [5]
+    thresholds = [0.6,0.7,0.8,0.9]
+    windows = [20]
     results = {}
     
     for th in thresholds:

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -t 1:00:00
+#SBATCH -t 2:00:00
 #SBATCH -N1-1
 #SBATCH -c4
 #SBATCH --mem=10000
@@ -29,4 +29,4 @@ output_path= $output_path/results_matching.csv
 #python /export/home/cse170020/Riccardo_T/synth_fr/preprocessing/note_processor_multi.py $input_path $myDicts/aphp_final.pkl $output_path
 
 #python preprocessing/note_processor_multi.py $input_path $myDicts/aphp_final.pkl $output_path
-python preprocessing/note_processor_multi2.py
+python preprocessing/note_processor_multi.py
