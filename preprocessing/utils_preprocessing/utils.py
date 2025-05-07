@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import argparse
 
 def split_csv(input_path, output_dir, chunk_size=10000):
     """
@@ -23,3 +24,11 @@ if __name__ == "__main__":
     #input_path = 'path/to/your/huge.csv'
     #output_dir = 'path/to/output/chunks'
     #split_csv(input_path, output_dir, chunk_size=100000)
+
+    parser = argparse.ArgumentParser(description= 'Setting input and output path')
+    parser.add_argument('big_boy_path', type=str, help='Path to the input big .csv file')
+    parser.add_argument('output_dir', type=str, help='Path to the folder for saving output')
+
+    args = parser.parse_args()
+    split_csv(input_path=args.big_boy_path, output_dir=args.output_dir)
+
