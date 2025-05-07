@@ -28,7 +28,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description= 'Setting input and output path')
     parser.add_argument('big_boy_path', type=str, help='Path to the input big .csv file')
     parser.add_argument('output_dir', type=str, help='Path to the folder for saving output')
+    parser.add_argument('--chunksize', type=int, default=10000, help='Number of rows in each sub file')
 
     args = parser.parse_args()
-    split_csv(input_path=args.big_boy_path, output_dir=args.output_dir)
+    split_csv(input_path=args.big_boy_path, output_dir=args.output_dir, chunk_size=args.chunksize)
 
