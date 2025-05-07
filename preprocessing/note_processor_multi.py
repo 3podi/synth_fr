@@ -6,6 +6,8 @@ import spacy
 from tqdm import tqdm
 import time
 import argparse
+import os
+import pandas as pd
 
 import json
 
@@ -61,12 +63,11 @@ def line_generator2(filename):
 def line_generator3(filename, chunksize=20):
     for chunk in pd.read_csv(filename, chunksize=chunksize):
         for row in chunk.itertuples(index=False, name=None):
+            print(list(row))
             yield list(row)
 
 def write_results(results, output_file_path, lock):
     """Write results to the output file."""
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
     with lock:
         with open(output_file_path, 'a', newline='', encoding='utf-8') as csvfile:
             writer = csv.writer(csvfile)
@@ -85,9 +86,9 @@ def main(note_path, dictionary_path, output_file_path,max_window=5,threshold=0.8
     # Initialize the pool with the global matcher
     with Pool(processes=NUM_WORKERS, initializer=initialize_nlp, initargs=(args,)) as pool:
         # Process lines in parallel
-        results = list(tqdm(pool.imap_unordered(process_line, (row for row in line_generator2(note_path) if row[2].isdigit() and int(row[2])> 5 )), total=number_lines, desc="Processing lines"))
+        #results = list(tqdm(pool.imap_unordered(process_line, (row for row in line_generator2(note_path) if row[2].isdigit() and int(row[2])> 5 )), total=number_lines, desc="Processing lines"))
         
-        #results = list(tqdm(pool.imap_unordered(process_line, (row for row in line_generator3(note_path) if row[2] and row[2] > 5 )), total=number_lines, desc="Processing lines"))
+        results = list(tqdm(pool.imap_unordered(process_line, (row for row in line_generator3(note_path) if row[2] and row[2] > 5 )), total=number_lines, desc="Processing lines"))
 
     t2 = time.time()
     print('Total time: ', (t2-t1)/60)
@@ -97,26 +98,25 @@ def main(note_path, dictionary_path, output_file_path,max_window=5,threshold=0.8
     
 if __name__ =='__main__':
     
-    parser = argparse.ArgumentParser(descrption= 'Setting note dictionary and output path')
+    parser = argparse.ArgumentParser(description= 'Setting note dictionary and output path')
     parser.add_argument('note_path', type=str, help='Path to the notes')
     parser.add_argument('dictionary_path', type=str, help='Path to dictionary for keywords extraction')
     parser.add_argument('output_file_path', type=str, help='Path to folder where to store the results')
     parser.add_argument('--thresholds', nargs='+', type=float, help='List of similarity thresholds')
-    parser.add_argument('--max_windows', nargs='+', type=in, help='List of max windows values')
+    parser.add_argument('--max_windows', nargs='+', type=int, help='List of max windows values')
     
     args = parser.parse_args()
-    main(note_path=args.note_path, dictionary_path=args.dictionary_path, output_file_path=args.output_file_path)
     
     note_path = args.note_path
     dict_path = args.dictionary_path
     output_path = args.output_file_path
-    
     thresholds = args.thresholds
     windows = args.max_windows
     
     for th in thresholds:
         for w in windows:
             print(f'Running: th={th} window={w}')
-            output_path = output_path + '/results_' + str(th) + '_' + str(w)+'.csv'
-            t = main(note_path=note_path, dictionary_path=dict_path, output_file_path=output_path, max_window=w, threshold=th)
+            output_file = os.path.join(output_path, f'results_{th}_{w}.csv')
+            os.makedirs(os.path.dirname(output_file), exist_ok=True)
+            t = main(note_path=note_path, dictionary_path=dict_path, output_file_path=output_file, max_window=w, threshold=th)
     
