@@ -4,7 +4,7 @@ import spacy
 import argparse
 from tqdm import tqdm
 import pickle
-
+from pathlib import Path
 
 def process_large_csv(file_path, column):
     for chunk in pd.read_csv(file_path, chunksize=1, usecols=[column]):
@@ -45,10 +45,15 @@ def main(file_path,column,n):
 
     counter = WordCount(file_path,column,n)
 
-    print(counter)
-
+    print("Top 10 n-grams:")
+    for k, v in counter.most_common(10):
+        print(" ".join(k), ":", v)
+        
     # Save
-    with open(f"preprocessing/frequency_analysis/results_frequency/ngrams_{n}_counter.pkl", "wb") as f:
+    output_dir = Path("preprocessing/frequency_analysis/results_frequency")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_file = output_dir / f"ngrams_{n}_counter.pkl"
+    with open(output_file, "wb") as f:
         pickle.dump(counter, f)
 
 if __name__ == '__main__':
