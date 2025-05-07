@@ -20,7 +20,7 @@ def count_lines_in_csv(file_path):
     """Count the number of lines in a CSV file efficiently"""
     with open(file_path, 'r', newline='', encoding='utf-8') as file:
         reader = csv.reader(file)
-        return sum(1 for row in reader)
+        return sum(1 for row in reader) - 1
 
 def WordCount(file,column,n):
 
