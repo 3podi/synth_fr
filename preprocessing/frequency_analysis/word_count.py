@@ -1,4 +1,5 @@
 import pandas as pd
+import csv
 from collections import Counter
 import spacy
 import argparse
@@ -15,10 +16,11 @@ def process_large_csv(file_path, column):
 def generate_ngrams(tokens, n):
     return zip(*[tokens[i:] for i in range(n)])
 
-def count_lines(file):
-    # Count lines excluding header
-    with open(file, 'r', encoding='utf-8') as f:
-        return sum(1 for _ in f) - 1
+def count_lines_in_csv(file_path):
+    """Count the number of lines in a CSV file efficiently"""
+    with open(file_path, 'r', newline='', encoding='utf-8') as file:
+        reader = csv.reader(file)
+        return sum(1 for row in reader)
 
 def WordCount(file,column,n):
 
@@ -26,7 +28,7 @@ def WordCount(file,column,n):
     nlp = spacy.load("fr_core_news_sm", disable=["parser", "ner"])
 
     # Count total lines for a nice progress bar (can slow things down)
-    total_lines = sum(1 for _ in open(file)) - 1  # minus header
+    total_lines = count_lines_in_csv(file)  # minus header
     chunksize = 1000
 
     with tqdm(total=total_lines, desc="Processing rows") as pbar:
