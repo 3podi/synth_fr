@@ -15,6 +15,11 @@ def process_large_csv(file_path, column):
 def generate_ngrams(tokens, n):
     return zip(*[tokens[i:] for i in range(n)])
 
+def count_lines(file):
+    # Count lines excluding header
+    with open(file, 'r', encoding='utf-8') as f:
+        return sum(1 for _ in f) - 1
+
 def WordCount(file,column,n):
 
     counter = Counter()
@@ -24,15 +29,14 @@ def WordCount(file,column,n):
     total_lines = sum(1 for _ in open(file)) - 1  # minus header
     chunksize = 1000
 
-    # Main loop with lemmatization
-    for chunk in tqdm(pd.read_csv(file, chunksize=chunksize), 
-                      total=total_lines // chunksize + 1,
-                      desc="Processing CSV chunks"):
-        for text in chunk[column].dropna():
-            doc = nlp(text.lower())
-            lemmas = [token.lemma_ for token in doc if token.is_alpha and not token.is_stop]
-            ngrams = generate_ngrams(lemmas, n)
-            counter.update(ngrams)
+    with tqdm(total=total_lines, desc="Processing rows") as pbar:
+        for chunk in pd.read_csv(file, chunksize=chunksize, usecols=[column]):
+            for text in chunk[column].dropna():
+                doc = nlp(text.lower())
+                lemmas = [token.lemma_ for token in doc if token.is_alpha and not token.is_stop]
+                ngrams = generate_ngrams(lemmas, n)
+                counter.update(ngrams)
+                pbar.update(1)
 
     return counter
 
