@@ -106,7 +106,7 @@ def main(results_folder, dictionary_path, compute_per_code_metrics=False):
 
             inverted_corpus = defaultdict(list)
             for expr, code in corpus.items():
-                clean_code = remove_symbols(code)
+                clean_code = remove_symbols(str(code))
                 inverted_corpus[clean_code].append(expr)
 
             per_code_metrics = []
