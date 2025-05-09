@@ -103,10 +103,18 @@ def main(results_folder, dictionary_path, compute_per_code_metrics=False):
 
         # Save per-code metrics if requested
         if compute_per_code_metrics:
+
+            inverted_corpus = defaultdict(list)
+            for expr, code in corpus.items():
+                clean_code = remove_symbols(code)
+                inverted_corpus[clean_code].append(expr)
+
             per_code_metrics = []
             for code, stats in code_stats.items():
                 precision, recall, f1 = compute_metrics(stats['tp'], stats['fp'], stats['fn'])
+                original_keys = "; ".join(inverted_corpus.get(code, []))  # combine if multiple keys map to same code
                 per_code_metrics.append({
+                    'dictionary_keys': original_keys,
                     'code': code,
                     'precision': precision,
                     'recall': recall,
