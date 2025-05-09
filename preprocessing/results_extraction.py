@@ -6,8 +6,7 @@ import pickle
 import re
 
 import matplotlib.pyplot as plt
-import seaborn as sns
-
+from collections import defaultdict
 def compute_confusion_matrix(y_pred, y_true):
     pred_set = set(y_pred)
     true_set = set(y_true)
@@ -26,7 +25,7 @@ def remove_symbols(text):
     # Remove everything that's not a letter, digit, or whitespace
     return re.sub(r'[^\w\s]', '', text)
 
-def main(results_folder, dictionary_path):
+def main(results_folder, dictionary_path, compute_per_code_metrics=False):
     extractions = [f for f in os.listdir(results_folder) if f.endswith('.csv')]
 
     with open(dictionary_path, 'rb') as f:
@@ -41,6 +40,10 @@ def main(results_folder, dictionary_path):
         tp_list = []
         fp_list = []
         fn_list = []
+
+        # Per-code TP, FP, FN counters
+        if compute_per_code_metrics:
+            code_stats = defaultdict(lambda: {'tp': 0, 'fp': 0, 'fn': 0})
 
         for idx, row in df.iterrows():
             predicted_expressions = row.iloc[-2]
@@ -67,6 +70,20 @@ def main(results_folder, dictionary_path):
                 for match in predicted_expressions
                 if match in corpus and corpus[match]
             ]
+
+            # Per-code metrics
+            if compute_per_code_metrics:
+                pred_set = set(predicted_codes)
+                true_set = set(true_codes)
+
+                for code in pred_set:
+                    if code in true_set:
+                        code_stats[code]['tp'] += 1
+                    else:
+                        code_stats[code]['fp'] += 1
+                for code in true_set:
+                    if code not in pred_set:
+                        code_stats[code]['fn'] += 1
             
             tp, fp, fn = compute_confusion_matrix(predicted_codes, true_codes)
             tp_list.append(tp)
@@ -83,6 +100,25 @@ def main(results_folder, dictionary_path):
         new_filename = extr.replace('.csv', '_metrics.csv')
         new_path = os.path.join(metrics_folder, new_filename)
         df.to_csv(new_path, index=False)
+
+        # Save per-code metrics if requested
+        if compute_per_code_metrics:
+            per_code_metrics = []
+            for code, stats in code_stats.items():
+                precision, recall, f1 = compute_metrics(stats['tp'], stats['fp'], stats['fn'])
+                per_code_metrics.append({
+                    'code': code,
+                    'precision': precision,
+                    'recall': recall,
+                    'f1': f1,
+                    'tp': stats['tp'],
+                    'fp': stats['fp'],
+                    'fn': stats['fn'],
+                })
+
+            metrics_df = pd.DataFrame(per_code_metrics)
+            metrics_df = metrics_df.sort_values(by='f1', ascending=False)
+            metrics_df.to_csv(os.path.join(metrics_folder, extr.replace('.csv', '_metrics_per_code.csv')), index=False)
 
 def total_metrics(results_folder):
 
@@ -149,9 +185,10 @@ if __name__ == '__main__':
     parser.add_argument('results_folder', type=str, help='Path to the result folder')
     parser.add_argument('dictionary_path', type=str, help='Path to the dictionary (pickle format)')
     parser.add_argument('--total_metrics_only', action='store_true', help='Optionally compute final metrics only')
+    parser.add_argument('--per_code_metrics', action='store_true', help='Optionally compute per code metrics' )
     args = parser.parse_args()
 
     if not args.total_metrics_only:
-        main(results_folder=args.results_folder, dictionary_path=args.dictionary_path)
+        main(results_folder=args.results_folder, dictionary_path=args.dictionary_path, compute_per_code_metrics=args.per_code_metrics)
     else:
         total_metrics_plot(results_folder=args.results_folder)
