@@ -204,7 +204,7 @@ def occurance_analysis(results_folder=None, dictionary_path=None):
     zero_elements = [element for element, count in counter.items() if count == 0]
     print(f'Number of expression in dict never matched over total expressions: {len(zero_elements)}/{len(set(corpus.keys()))}')
     print(f'Number of codes never matched (several unmatched expressions can have same code) over total codes in dict: {len(zero_codes)}/{len(dict_codes)}')
-    print(f'Number of codes not available in my dict but present in the data over total codes in data {len(missing_codes)}/{len(true_codes)}')
+    print(f'Number of codes not available in my dict but present in the data over total codes in data {len(missing_codes)}/{len(codes)}')
 
 
     
