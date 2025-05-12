@@ -164,6 +164,9 @@ def occurance_analysis(results_folder=None, dictionary_path=None):
     
     corpus = {k.lower(): v for k, v in corpus.items()}
     counter = Counter({element:0 for element in corpus.keys()})
+    dict_codes = set(corpus.values())
+    pred_codes = set()
+    codes = set()
 
     for extr in extractions:
         path = os.path.join(results_folder, extr)
@@ -178,11 +181,31 @@ def occurance_analysis(results_folder=None, dictionary_path=None):
                     predicted_expressions = []
             except (ValueError, SyntaxError):
                 predicted_expressions = []
+
+            true_codes = row.iloc[-1]
+            if isinstance(true_codes, str):
+                true_codes = true_codes.strip().split()
+                true_codes = [remove_symbols(code) for code in true_codes]
+            else:
+                true_codes = []
+
+            predicted_codes = [
+                    remove_symbols(corpus[match])
+                    for match in predicted_expressions
+                    if match in corpus and corpus[match]
+                ]
             
+            pred_codes.update(predicted_codes)
+            codes.update(true_codes)
             counter.update(predicted_expressions)
-    
-    zero_elements = [element for element, count in counter.items() if count == 0]    
-    print(zero_elements)
+
+    missing_codes = len(codes - dict_codes)
+    zero_codes = len(dict_codes - predicted_codes)    
+    zero_elements = [element for element, count in counter.items() if count == 0]
+    print('Number of expression in dict never matched: ', len(zero_elements))
+    print('Number of codes never matched (several unmatched expressions can have same code): ', zero_codes)
+    print('Number of codes not available in my dict but present in the data: ', len(missing_codes))
+
 
     
 
