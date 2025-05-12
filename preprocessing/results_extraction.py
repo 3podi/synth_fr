@@ -4,6 +4,7 @@ import os
 import ast
 import pickle
 import re
+from collections import Counter
 
 import matplotlib.pyplot as plt
 from collections import defaultdict
@@ -154,6 +155,37 @@ def total_metrics(results_folder):
         precision, recall, f1 = compute_metrics(tp, fp, fn)
         print(f'Precision: {precision} - Recall: {recall} - f1: {f1}')
 
+def occurance_analysis(results_folder=None):
+
+    extractions = [f for f in os.listdir(results_folder) if f.endswith('.csv')]
+
+    #with open(dictionary_path, 'rb') as f:
+    #    corpus = pickle.load(f)
+    
+    #corpus = {k.lower(): v for k, v in corpus.items()}
+    counter = Counter()
+
+    for extr in extractions:
+        path = os.path.join(results_folder, extr)
+        df = pd.read_csv(path)
+
+        for idx, row in df.iterrows():
+            predicted_expressions = row.iloc[-2]
+        
+            try:
+                predicted_expressions = ast.literal_eval(predicted_expressions)
+                if not isinstance(predicted_expressions, list):
+                    predicted_expressions = []
+            except (ValueError, SyntaxError):
+                predicted_expressions = []
+            
+            counter.update(predicted_expressions)
+    
+    print(counter == 0)
+    
+
+    
+
 def total_metrics_plot(results_folder):
     metrics_path = os.path.join(results_folder, 'with_metrics')
     files = [f for f in os.listdir(metrics_path) if f.endswith('_metrics.csv')]
@@ -211,3 +243,4 @@ if __name__ == '__main__':
         main(results_folder=args.results_folder, dictionary_path=args.dictionary_path, compute_per_code_metrics=args.per_code_metrics, digits=args.digits)
     else:
         total_metrics(results_folder=args.results_folder)
+        occurance_analysis(results_folder=args.results_folder)
