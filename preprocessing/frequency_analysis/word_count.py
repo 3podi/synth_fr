@@ -99,7 +99,7 @@ def WordCount2(file, column, n, vocab_size=10000):
 
 def main(file_path,column,n):
 
-    counter = WordCount(file_path,column,n)
+    counter = WordCount2(file_path,column,n)
 
     print("Top 10 n-grams:")
     for k, v in counter.most_common(10):
