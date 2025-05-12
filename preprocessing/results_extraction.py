@@ -242,5 +242,5 @@ if __name__ == '__main__':
     if not args.total_metrics_only:
         main(results_folder=args.results_folder, dictionary_path=args.dictionary_path, compute_per_code_metrics=args.per_code_metrics, digits=args.digits)
     else:
-        total_metrics(results_folder=args.results_folde)
+        total_metrics(results_folder=args.results_folder)
         occurance_analysis(results_folder=args.results_folder, dictionary_path=args.dictionary_path)
