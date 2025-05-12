@@ -25,7 +25,7 @@ def remove_symbols(text):
     # Remove everything that's not a letter, digit, or whitespace
     return re.sub(r'[^\w\s]', '', text)
 
-def main(results_folder, dictionary_path, compute_per_code_metrics=False):
+def main(results_folder, dictionary_path, compute_per_code_metrics=False, digits=None):
     extractions = [f for f in os.listdir(results_folder) if f.endswith('.csv')]
 
     with open(dictionary_path, 'rb') as f:
@@ -60,16 +60,26 @@ def main(results_folder, dictionary_path, compute_per_code_metrics=False):
             # Process true codes
             if isinstance(true_codes, str):
                 true_codes = true_codes.strip().split()
-                true_codes = [remove_symbols(code) for code in true_codes]
+                if digits:
+                    true_codes = [remove_symbols(code)[:1+digits] for code in true_codes]
+                else:
+                    true_codes = [remove_symbols(code) for code in true_codes]
             else:
                 true_codes = []
 
             # Handle case with no predictions
-            predicted_codes = [
-                remove_symbols(corpus[match])
-                for match in predicted_expressions
-                if match in corpus and corpus[match]
-            ]
+            if digits:
+                predicted_codes = [
+                    remove_symbols(corpus[match])[:1+digits]
+                    for match in predicted_expressions
+                    if match in corpus and corpus[match]
+                ]
+            else:
+                predicted_codes = [
+                    remove_symbols(corpus[match])
+                    for match in predicted_expressions
+                    if match in corpus and corpus[match]
+                ]
 
             # Per-code metrics
             if compute_per_code_metrics:
@@ -194,9 +204,10 @@ if __name__ == '__main__':
     parser.add_argument('dictionary_path', type=str, help='Path to the dictionary (pickle format)')
     parser.add_argument('--total_metrics_only', action='store_true', help='Optionally compute final metrics only')
     parser.add_argument('--per_code_metrics', action='store_true', help='Optionally compute per code metrics' )
+    parser.add_argument('--digits', type=int, default=None, help='Num digits after the code letter to consider for metrics')
     args = parser.parse_args()
 
     if not args.total_metrics_only:
-        main(results_folder=args.results_folder, dictionary_path=args.dictionary_path, compute_per_code_metrics=args.per_code_metrics)
+        main(results_folder=args.results_folder, dictionary_path=args.dictionary_path, compute_per_code_metrics=args.per_code_metrics, digits=args.digits)
     else:
         total_metrics(results_folder=args.results_folder)
