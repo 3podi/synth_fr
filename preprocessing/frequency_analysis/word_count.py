@@ -70,14 +70,22 @@ def WordCount2(file, column, n, vocab_size=10000):
     chunksize = 1000
 
     # First pass: Compute word frequencies to limit vocabulary
+    #word_counts = Counter()
+    #with tqdm(total=total_lines, desc="Computing word frequencies") as pbar:
+    #    for chunk in pd.read_csv(file, chunksize=chunksize, usecols=[column]):
+    #        for text in chunk[column].dropna():
+    #            doc = nlp(text.lower())
+    #            lemmas = [token.lemma_ for token in doc if token.is_alpha and not token.is_stop]
+    #            word_counts.update(lemmas)
+    #            pbar.update(1)
+
+    df = pd.read_csv(file, usecols=[column])
     word_counts = Counter()
-    with tqdm(total=total_lines, desc="Computing word frequencies") as pbar:
-        for chunk in pd.read_csv(file, chunksize=chunksize, usecols=[column]):
-            for text in chunk[column].dropna():
-                doc = nlp(text.lower())
-                lemmas = [token.lemma_ for token in doc if token.is_alpha and not token.is_stop]
-                word_counts.update(lemmas)
-                pbar.update(1)
+
+    for text in tqdm(df[column].dropna(), total=len(df), desc="Computing word frequencies"):
+        doc = nlp(text.lower())
+        lemmas = [token.lemma_ for token in doc if token.is_alpha and not token.is_stop]
+        word_counts.update(lemmas)
 
     print('Number of words in data: ', len(word_counts))
     # Limit vocabulary to the most frequent words
