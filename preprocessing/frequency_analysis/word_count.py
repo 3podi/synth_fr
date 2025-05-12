@@ -52,7 +52,7 @@ def WordCount(file,column,n):
 
     return counter
 
-def WordCount2(file, column, n, vocab_size=10000):
+def WordCount2(file, column, n, vocab_size=10000, vocab_path=None):
     """
     Count n-grams in a CSV file with vocabulary limitation.
 
@@ -69,27 +69,30 @@ def WordCount2(file, column, n, vocab_size=10000):
     total_lines = count_lines_in_csv(file)
     chunksize = 1000
 
-    # First pass: Compute word frequencies to limit vocabulary
-    #word_counts = Counter()
-    #with tqdm(total=total_lines, desc="Computing word frequencies") as pbar:
-    #    for chunk in pd.read_csv(file, chunksize=chunksize, usecols=[column]):
-    #        for text in chunk[column].dropna():
-    #            doc = nlp(text.lower())
-    #            lemmas = [token.lemma_ for token in doc if token.is_alpha and not token.is_stop]
-    #            word_counts.update(lemmas)
-    #            pbar.update(1)
+    if vocab_path is None:
+        print(f'No vocab_path given; computing the words count.')
+        # First pass: Compute word frequencies to limit vocabulary
+        word_counts = Counter()
+        with tqdm(total=total_lines, desc="Computing word frequencies") as pbar:
+            for chunk in pd.read_csv(file, chunksize=chunksize, usecols=[column]):
+                for text in chunk[column].dropna():
+                    doc = nlp(text.lower())
+                    lemmas = [token.lemma_ for token in doc if token.is_alpha and not token.is_stop]
+                    word_counts.update(lemmas)
+                    pbar.update(1)
 
-    df = pd.read_csv(file, usecols=[column])
-    word_counts = Counter()
+            print('Number of words in data: ', len(word_counts))
+            with open('../counter_1gram.pkl', 'wb') as f:
+                pickle.dump(word_counts, f)
+    
+    else:
+        with open(vocab_path, 'rb') as f:
+            word_counts = pickle.load(f)
 
-    for text in tqdm(df[column].dropna(), total=len(df), desc="Computing word frequencies"):
-        doc = nlp(text.lower())
-        lemmas = [token.lemma_ for token in doc if token.is_alpha and not token.is_stop]
-        word_counts.update(lemmas)
-
-    print('Number of words in data: ', len(word_counts))
     # Limit vocabulary to the most frequent words
     vocab = set(word for word, count in word_counts.most_common(vocab_size))
+    del word_counts
+    print('Number of words in my vocabulary: ', len(vocab))
 
     # Second pass: Compute n-grams with limited vocabulary
     ngram_counter = Counter()
@@ -126,7 +129,8 @@ if __name__ == '__main__':
     parser.add_argument('file_path', type=str, help='Path to the text file')
     parser.add_argument('column', type=str, help='Name of the text column')
     parser.add_argument('n', type=int, help='Integer that define what n-gram to count')
+    parser.add_argument('--vocab_path', type=str, default=None, help='path to load vocab')
 
     args=parser.parse_args()
 
-    main(args.file_path, args.column, args.n)
+    main(args.file_path, args.column, args.n, args.vocab_path)
