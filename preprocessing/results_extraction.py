@@ -155,15 +155,15 @@ def total_metrics(results_folder):
         precision, recall, f1 = compute_metrics(tp, fp, fn)
         print(f'Precision: {precision} - Recall: {recall} - f1: {f1}')
 
-def occurance_analysis(results_folder=None):
+def occurance_analysis(results_folder=None, dictionary_path=None):
 
     extractions = [f for f in os.listdir(results_folder) if f.endswith('.csv')]
 
-    #with open(dictionary_path, 'rb') as f:
-    #    corpus = pickle.load(f)
+    with open(dictionary_path, 'rb') as f:
+        corpus = pickle.load(f)
     
-    #corpus = {k.lower(): v for k, v in corpus.items()}
-    counter = Counter()
+    corpus = {k.lower(): v for k, v in corpus.items()}
+    counter = Counter({element:0 for element in corpus.keys()})
 
     for extr in extractions:
         path = os.path.join(results_folder, extr)
@@ -181,8 +181,8 @@ def occurance_analysis(results_folder=None):
             
             counter.update(predicted_expressions)
     
-    print(counter == 0)
-    
+    zero_elements = [element for element, count in counter.items() if count == 0]    
+    print(zero_elements)
 
     
 
