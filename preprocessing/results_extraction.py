@@ -199,11 +199,11 @@ def occurance_analysis(results_folder=None, dictionary_path=None):
             codes.update(true_codes)
             counter.update(predicted_expressions)
 
-    missing_codes = len(codes - dict_codes)
-    zero_codes = len(dict_codes - pred_codes)    
+    missing_codes = codes - dict_codes
+    zero_codes = dict_codes - pred_codes    
     zero_elements = [element for element, count in counter.items() if count == 0]
     print('Number of expression in dict never matched: ', len(zero_elements))
-    print('Number of codes never matched (several unmatched expressions can have same code): ', zero_codes)
+    print('Number of codes never matched (several unmatched expressions can have same code): ', len(zero_codes))
     print('Number of codes not available in my dict but present in the data: ', len(missing_codes))
 
 
