@@ -108,9 +108,9 @@ def WordCount2(file, column, n, vocab_size=10000, vocab_path=None):
     return ngram_counter
 
 
-def main(file_path,column,n):
+def main(file_path,column,n,vocab_path):
 
-    counter = WordCount2(file_path,column,n)
+    counter = WordCount2(file_path,column,n,vocab_path)
 
     print("Top 10 n-grams:")
     for k, v in counter.most_common(10):
