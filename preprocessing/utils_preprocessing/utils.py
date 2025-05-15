@@ -79,15 +79,15 @@ def get_notes(file_path):
         reader = csv.DictReader(csvfile)
 
         # Check if 'text' column exists
-        if 'input' not in reader.fieldnames:
+        if 'text' not in reader.fieldnames:
             raise ValueError("CSV file does not contain a 'text' column")
 
         for row in reader:
-            texts.append(normalize_text(row['input'].replace('\n', ' ')))
+            texts.append(normalize_text(row['text'].replace('\n', ' ')))
 
     return texts
 
-def get_percentile_vocab(vocab_path, lower_percentile=20, upper_percentile=49):
+def get_percentile_vocab(vocab_path, lower_percentile=50, upper_percentile=80):
     """
     Get vocabulary of words in the specified percentile range of occurrence distribution.
 
@@ -116,7 +116,7 @@ def get_percentile_vocab(vocab_path, lower_percentile=20, upper_percentile=49):
     percentile_vocab = {
         normalize_text(word) for word, count in word_counts.items()
         if lower_threshold <= count <= upper_threshold
-        if normalize_text(word) not in stops
+        if normalize_text(word) not in stops and len(normalize_text(word)) > 2
     }
 
     return percentile_vocab

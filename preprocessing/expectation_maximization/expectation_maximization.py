@@ -5,7 +5,7 @@ from tqdm import tqdm
 from scipy.sparse import csr_matrix
 from preprocessing.utils_preprocessing.utils import get_notes, get_percentile_vocab
 
-def show_top_words_per_class(P_w_given_c, vocab, top_k=50, class_names=None):
+def show_top_words_per_class(P_w_given_c, vocab, top_k=10, class_names=None):
     """
     Display top_k words for each class based on P(w|c).
     
@@ -111,7 +111,7 @@ def ExpectationMaximization2(documents, num_classes, input_vocab=None):
         for idx in top_indices:
             print(f"  {vocab[idx]:<10} -> P(w|c) = {P_w_given_c[c][idx]:.3f}")
 
-def ExpectationMaximization3(documents, num_classes, input_vocab=None, batch_size=1000, dtype=np.float32):
+def ExpectationMaximization3(documents, num_classes, input_vocab=None, iters=10, batch_size=10000, dtype=np.float32):
     """
     Run EM algorithm to find P(w | c) and P(c) using batching and sparse matrix.
     
@@ -132,7 +132,7 @@ def ExpectationMaximization3(documents, num_classes, input_vocab=None, batch_siz
     C = num_classes
     word2idx = {w: i for i, w in enumerate(input_vocab)}
     D = len(documents)
-    max_iter = 10
+    max_iter = iters
 
     # Build sparse matrix X of shape (D, V)
     row, col, data = [], [], []
@@ -190,7 +190,7 @@ def ExpectationMaximization3(documents, num_classes, input_vocab=None, batch_siz
     return P_w_given_c, P_c
 
 
-def main(note_path, output_path, vocab_path, num_classes=10, vocab_size=10000):
+def main(note_path, output_path, vocab_path, num_classes=23, iters=10):
 
     # Limit vocab, by default to words in 25-75% percentile
     vocab = get_percentile_vocab(vocab_path)    
@@ -202,8 +202,7 @@ def main(note_path, output_path, vocab_path, num_classes=10, vocab_size=10000):
 
     show_top_words_per_class(P_w_given_c=P_w_given_c, vocab=vocab)
 
-    print(P_w_given_c)
-
+    np.save(f'{output_path}em_output.npy', P_w_given_c)
 
 if __name__ == '__main__':
 
@@ -211,7 +210,8 @@ if __name__ == '__main__':
     parser.add_argument('note_path', type=str, help='Path to the notes')
     parser.add_argument('output_file_path', type=str, help='Path to folder where to store the results')
     parser.add_argument('--vocab_path', type=str, default=None, help='Path to dictionary for keywords extraction')
-    parser.add_argument('--num_classes', type=int, default=100, help='List of similarity thresholds')
+    parser.add_argument('--num_classes', type=int, default=23, help='List of similarity thresholds')
+    parser.add_argument('--iters', type=int, default=10, help='Max iterations of the algorithm')
     
     args = parser.parse_args()
     
@@ -219,5 +219,6 @@ if __name__ == '__main__':
     output_path = args.output_file_path
     vocab_path = args.vocab_path
     num_classes = args.num_classes
+    iters = args.iters
 
-    main(note_path=note_path, output_path=output_path, vocab_path=vocab_path, num_classes=num_classes)
+    main(note_path=note_path, output_path=output_path, vocab_path=vocab_path, num_classes=num_classes, iters=iters)
