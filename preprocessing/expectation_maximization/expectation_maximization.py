@@ -51,13 +51,51 @@ def ExpectationMaximization(documents, num_classes, input_vocab=None):
     
     return P_w_given_c
 
+def ExpectationMaximization2(documents, num_classes, input_vocab=None):
+    
+    # Vectorize using fixed vocabulary
+    vectorizer = CountVectorizer(vocabulary=input_vocab)
+    X = vectorizer.fit_transform(documents).toarray().astype(np.float32)  # shape (D, V)
+    vocab = vectorizer.get_feature_names_out()
+    D, V = X.shape
+
+    # Initialize
+    P_c = np.full((num_classes,), 1 / num_classes, dtype=np.float32)      # shape (C,)
+    P_w_given_c = np.random.dirichlet(np.ones(V), size=num_classes).astype(np.float32)  # shape (C, V)
+
+    for iteration in range(3):
+        # ---------- E-step ----------
+        # Compute log P(w|c) for all docs and classes
+        # log_likelihoods: shape (D, C)
+        log_P_w_given_c = np.log(P_w_given_c + 1e-10).astype(np.float32)   # shape (C, V)
+        log_likelihoods = X @ log_P_w_given_c.T                            # shape (D, C)
+
+        log_joint = log_likelihoods + np.log(P_c + 1e-10)[None, :]         # shape (D, C)
+        max_log = np.max(log_joint, axis=1, keepdims=True)                # for numerical stability
+        probs = np.exp(log_joint - max_log)                               # shape (D, C)
+        P_c_given_d = probs / np.sum(probs, axis=1, keepdims=True)        # shape (D, C)
+
+        # ---------- M-step ----------
+        P_c = np.mean(P_c_given_d, axis=0)                                 # shape (C,)
+
+        # Compute expected word counts: P_c_given_d.T @ X gives shape (C, V)
+        weighted_counts = P_c_given_d.T @ X                                # shape (C, V)
+        total_words_per_class = weighted_counts.sum(axis=1, keepdims=True)  # shape (C, 1)
+        P_w_given_c = weighted_counts / (total_words_per_class + 1e-10)    # shape (C, V)
+
+    # ---------- Output ----------
+    top_k = 5
+    for c in range(num_classes):
+        print(f"\nClass {c} (P(c)={P_c[c]:.2f}):")
+        top_indices = np.argsort(P_w_given_c[c])[::-1][:top_k]
+        for idx in top_indices:
+            print(f"  {vocab[idx]:<10} -> P(w|c) = {P_w_given_c[c][idx]:.3f}")
+
+
 def main(note_path, output_path, vocab_path, num_classes=10, vocab_size=10000):
 
     # Limit vocab, by default to words in 25-75% percentile
-    vocab = get_percentile_vocab(vocab_path)
-    for v in vocab:
-        if any(c.isupper() for c in v):
-            print('sgamato: ', v)
+    vocab = get_percentile_vocab(vocab_path)    
     print('Number of words in my vocabulary: ', len(vocab))
 
     documents = get_notes(note_path)
