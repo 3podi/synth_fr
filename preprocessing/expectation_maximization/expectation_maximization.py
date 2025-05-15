@@ -158,6 +158,14 @@ def ExpectationMaximization3(documents, num_classes, input_vocab=None, batch_siz
         P_w_given_c = expected_counts / expected_counts.sum(axis=1, keepdims=True)
         P_c = class_totals / D
 
+    # ---------- Output ----------
+    top_k = 5
+    for c in range(num_classes):
+        print(f"\nClass {c} (P(c)={P_c[c]:.2f}):")
+        top_indices = np.argsort(P_w_given_c[c])[::-1][:top_k]
+        for idx in top_indices:
+            print(f"  {input_vocab[idx]:<10} -> P(w|c) = {P_w_given_c[c][idx]:.3f}")
+
     return P_w_given_c, P_c
 
 
