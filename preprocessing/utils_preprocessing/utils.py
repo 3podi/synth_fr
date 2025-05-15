@@ -8,6 +8,15 @@ import csv
 import pickle
 import numpy as np
 
+french_stopwords = set([
+    "alors", "au", "aucuns", "aussi", "autre", "avant", "avec", "avoir", "bon", "car", "ce", "cela", "ces", "ceux", "chaque", "ci", "comme", "comment", "dans", "des", "du", "dedans", "dehors", "depuis", "devrait", "doit", "donc", "dos", "droite", "début", "elle", "elles", "en", "encore", "essai", "est", "et", "eu", "fait", "faites", "fois", "font", "force", "haut", "hors", "ici", "il", "ils", "je", "juste", "la", "le", "les", "leur", "là", "ma", "maintenant", "mais", "mes", "mine", "moins", "mon", "mot", "même", "ni", "nommés", "notre", "nous", "nouveaux", "ou", "où", "par", "parce", "parole", "pas", "personnes", "peut", "peu", "pièce", "plupart", "pour", "pourquoi", "quand", "que", "quel", "quelle", "quelles", "quels", "qui", "sa", "sans", "ses", "seulement", "si", "sien", "son", "sont", "sous", "soyez", "sujet", "sur", "ta", "tandis", "tellement", "tels", "tes", "ton", "tous", "tout", "trop", "très", "tu", "voient", "vont", "votre", "vous", "vu", "ça", "étaient", "état", "étions", "été", "être"
+])
+
+import spacy
+nlp = spacy.load("fr_core_news_sm")
+french_stopwords = set(nlp.Defaults.stop_words)
+del nlp
+
 def split_csv(input_path, output_dir, chunk_size=10000):
     """
     Splits a large CSV into smaller chunks.
@@ -46,10 +55,8 @@ def normalize_text(text):
     # Remove numbers
     text = re.sub(r'\d+', '', text)
 
-    # All punctuation except '-'
-    punctuation_to_remove = string.punctuation.replace('-', '')
-    # Remove all punctuation except '-'
-    text = text.translate(str.maketrans('', '', punctuation_to_remove))
+    # Replace all punctuation with whitespace
+    text = re.sub(f"[{re.escape(string.punctuation)}]", " ", text)
     
     # Lowercase
     text = text.lower()
@@ -102,11 +109,14 @@ def get_percentile_vocab(vocab_path, lower_percentile=20, upper_percentile=49):
     # Calculate percentiles
     lower_threshold = np.percentile(counts, lower_percentile)
     upper_threshold = np.percentile(counts, upper_percentile)
+    
+    stops = {normalize_text(stop) for stop in french_stopwords}
 
     # Filter words within the percentile range
     percentile_vocab = {
         normalize_text(word) for word, count in word_counts.items()
         if lower_threshold <= count <= upper_threshold
+        if normalize_text(word) not in stops
     }
 
     return percentile_vocab

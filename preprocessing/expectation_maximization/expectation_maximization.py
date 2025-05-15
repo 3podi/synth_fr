@@ -5,7 +5,7 @@ from tqdm import tqdm
 from scipy.sparse import csr_matrix
 from preprocessing.utils_preprocessing.utils import get_notes, get_percentile_vocab
 
-def show_top_words_per_class(P_w_given_c, vocab, top_k=10, class_names=None):
+def show_top_words_per_class(P_w_given_c, vocab, top_k=50, class_names=None):
     """
     Display top_k words for each class based on P(w|c).
     
@@ -16,7 +16,7 @@ def show_top_words_per_class(P_w_given_c, vocab, top_k=10, class_names=None):
         class_names: list of class names (optional)
     """
     C, V = P_w_given_c.shape
-    vocab = np.array(vocab)
+    vocab = np.array(list(vocab))
 
     for c in range(C):
         name = f"Class {c}" if class_names is None else class_names[c]
@@ -132,7 +132,7 @@ def ExpectationMaximization3(documents, num_classes, input_vocab=None, batch_siz
     C = num_classes
     word2idx = {w: i for i, w in enumerate(input_vocab)}
     D = len(documents)
-    max_iter = 3
+    max_iter = 10
 
     # Build sparse matrix X of shape (D, V)
     row, col, data = [], [], []
@@ -158,7 +158,7 @@ def ExpectationMaximization3(documents, num_classes, input_vocab=None, batch_siz
         expected_counts = np.zeros((C, V), dtype=dtype)
         class_totals = np.zeros(C, dtype=dtype)
 
-        for start in tqdm(range(0, D, batch_size), desc=f"EM Iteration {it+1}"):
+        for start in tqdm(range(0, D, batch_size), desc=f"EM Iteration"):
             end = min(start + batch_size, D)
             X_batch = X[start:end]  # shape (B, V)
             B = X_batch.shape[0]
@@ -211,7 +211,7 @@ if __name__ == '__main__':
     parser.add_argument('note_path', type=str, help='Path to the notes')
     parser.add_argument('output_file_path', type=str, help='Path to folder where to store the results')
     parser.add_argument('--vocab_path', type=str, default=None, help='Path to dictionary for keywords extraction')
-    parser.add_argument('--num_classes', type=int, default=10, help='List of similarity thresholds')
+    parser.add_argument('--num_classes', type=int, default=100, help='List of similarity thresholds')
     
     args = parser.parse_args()
     
