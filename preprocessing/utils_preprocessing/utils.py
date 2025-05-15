@@ -71,11 +71,11 @@ def get_notes(file_path):
         reader = csv.DictReader(csvfile)
 
         # Check if 'text' column exists
-        if 'text' not in reader.fieldnames:
+        if 'input' not in reader.fieldnames:
             raise ValueError("CSV file does not contain a 'text' column")
 
         for row in reader:
-            texts.append(row['text'])
+            texts.append(normalize_text(row['input'].replace('\n', '')))
 
     return texts
 
@@ -104,7 +104,7 @@ def get_percentile_vocab(vocab_path, lower_percentile=25, upper_percentile=75):
 
     # Filter words within the percentile range
     percentile_vocab = {
-        word for word, count in word_counts.items()
+        normalize_text(word) for word, count in word_counts.items()
         if lower_threshold <= count <= upper_threshold
     }
 
