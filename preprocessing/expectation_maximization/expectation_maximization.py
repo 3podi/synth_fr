@@ -1,9 +1,8 @@
 import numpy as np
 import argparse
 from sklearn.feature_extraction.text import CountVectorizer
-from collections import defaultdict
 from tqdm import tqdm
-import pickle
+from scipy.sparse import csr_matrix
 from preprocessing.utils_preprocessing.utils import get_notes, get_percentile_vocab
 
 def ExpectationMaximization(documents, num_classes, input_vocab=None):
@@ -90,6 +89,76 @@ def ExpectationMaximization2(documents, num_classes, input_vocab=None):
         top_indices = np.argsort(P_w_given_c[c])[::-1][:top_k]
         for idx in top_indices:
             print(f"  {vocab[idx]:<10} -> P(w|c) = {P_w_given_c[c][idx]:.3f}")
+
+def ExpectationMaximization3(documents, num_classes, input_vocab=None, batch_size=1000, dtype=np.float32):
+    """
+    Run EM algorithm to find P(w | c) and P(c) using batching and sparse matrix.
+    
+    Args:
+        docs: List of documents (each a list of words).
+        class_probs: Initial P(c), shape (num_classes,)
+        vocab: List of words to include.
+        num_classes: Number of classes.
+        max_iter: EM iterations.
+        batch_size: Batch size for processing documents.
+        dtype: numpy dtype (e.g., np.float32 or np.float16)
+    
+    Returns:
+        P_w_given_c: ndarray (num_classes, vocab_size)
+        P_c: ndarray (num_classes,)
+    """
+    V = len(input_vocab)
+    C = num_classes
+    word2idx = {w: i for i, w in enumerate(input_vocab)}
+    D = len(documents)
+    max_iter = 3
+
+    # Build sparse matrix X of shape (D, V)
+    row, col, data = [], [], []
+    for i, doc in enumerate(documents):
+        counts = {}
+        for word in doc.split(' '):
+            if word in word2idx:
+                idx = word2idx[word]
+                counts[idx] = counts.get(idx, 0) + 1
+        for j, count in counts.items():
+            row.append(i)
+            col.append(j)
+            data.append(count)
+
+    X = csr_matrix((data, (row, col)), shape=(D, V), dtype=dtype)
+
+    # Initialize
+    P_c = np.full((num_classes,), 1 / num_classes, dtype=dtype)      # shape (C,)
+    P_w_given_c = np.random.rand(C, V).astype(dtype)
+    P_w_given_c /= P_w_given_c.sum(axis=1, keepdims=True)
+
+    for it in range(max_iter):
+        expected_counts = np.zeros((C, V), dtype=dtype)
+        class_totals = np.zeros(C, dtype=dtype)
+
+        for start in tqdm(range(0, D, batch_size), desc=f"EM Iteration {it+1}"):
+            end = min(start + batch_size, D)
+            X_batch = X[start:end]  # shape (B, V)
+            B = X_batch.shape[0]
+
+            log_P_w_given_c = np.log(P_w_given_c + 1e-9)
+            log_likelihoods = X_batch @ log_P_w_given_c.T  # shape (B, C)
+            log_likelihoods += np.log(P_c + 1e-9)
+
+            max_log = log_likelihoods.max(axis=1).reshape(-1, 1)
+            probs = np.exp(log_likelihoods - max_log)
+            P_c_given_d = probs / probs.sum(axis=1, keepdims=True)  # shape (B, C)
+
+            weighted = P_c_given_d.T @ X_batch.toarray()  # shape (C, V)
+            expected_counts += weighted
+            class_totals += P_c_given_d.sum(axis=0)
+
+        # M-step
+        P_w_given_c = expected_counts / expected_counts.sum(axis=1, keepdims=True)
+        P_c = class_totals / D
+
+    return P_w_given_c, P_c
 
 
 def main(note_path, output_path, vocab_path, num_classes=10, vocab_size=10000):
