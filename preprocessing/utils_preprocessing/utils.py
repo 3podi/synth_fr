@@ -80,7 +80,7 @@ def get_notes(file_path):
 
     return texts
 
-def get_percentile_vocab(vocab_path, lower_percentile=25, upper_percentile=75):
+def get_percentile_vocab(vocab_path, lower_percentile=20, upper_percentile=49):
     """
     Get vocabulary of words in the specified percentile range of occurrence distribution.
 

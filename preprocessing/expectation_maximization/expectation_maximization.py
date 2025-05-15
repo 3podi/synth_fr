@@ -100,7 +100,7 @@ def main(note_path, output_path, vocab_path, num_classes=10, vocab_size=10000):
 
     documents = get_notes(note_path)
 
-    P_w_given_c = ExpectationMaximization(documents=documents,num_classes=num_classes,input_vocab=vocab)
+    P_w_given_c = ExpectationMaximization2(documents=documents,num_classes=num_classes,input_vocab=vocab)
 
     print(P_w_given_c)
 
