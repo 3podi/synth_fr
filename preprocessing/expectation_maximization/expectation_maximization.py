@@ -5,6 +5,27 @@ from tqdm import tqdm
 from scipy.sparse import csr_matrix
 from preprocessing.utils_preprocessing.utils import get_notes, get_percentile_vocab
 
+def show_top_words_per_class(P_w_given_c, vocab, top_k=10, class_names=None):
+    """
+    Display top_k words for each class based on P(w|c).
+    
+    Args:
+        P_w_given_c: shape (C, V)
+        vocab: list of words
+        top_k: number of words to show per class
+        class_names: list of class names (optional)
+    """
+    C, V = P_w_given_c.shape
+    vocab = np.array(vocab)
+
+    for c in range(C):
+        name = f"Class {c}" if class_names is None else class_names[c]
+        print(f"\n📚 Top {top_k} words for {name}:")
+        top_indices = np.argsort(P_w_given_c[c])[::-1][:top_k]
+        for rank, idx in enumerate(top_indices):
+            prob = P_w_given_c[c, idx]
+            print(f"{rank+1:>2}. {vocab[idx]:<15} (P={prob:.4f})")
+
 def ExpectationMaximization(documents, num_classes, input_vocab=None):
 
     # Vectorizer restricted to input vocabulary
@@ -159,12 +180,12 @@ def ExpectationMaximization3(documents, num_classes, input_vocab=None, batch_siz
         P_c = class_totals / D
 
     # ---------- Output ----------
-    top_k = 5
-    for c in range(num_classes):
-        print(f"\nClass {c} (P(c)={P_c[c]:.2f}):")
-        top_indices = np.argsort(P_w_given_c[c])[::-1][:top_k]
-        for idx in top_indices:
-            print(f"  {input_vocab[idx]:<10} -> P(w|c) = {P_w_given_c[c][idx]:.3f}")
+    #top_k = 5
+    #for c in range(num_classes):
+    #    print(f"\nClass {c} (P(c)={P_c[c]:.2f}):")
+    #    top_indices = np.argsort(P_w_given_c[c])[::-1][:top_k]
+    #    for idx in top_indices:
+    #        print(f"  {input_vocab[idx]:<10} -> P(w|c) = {P_w_given_c[c][idx]:.3f}")
 
     return P_w_given_c, P_c
 
@@ -177,7 +198,9 @@ def main(note_path, output_path, vocab_path, num_classes=10, vocab_size=10000):
 
     documents = get_notes(note_path)
 
-    P_w_given_c = ExpectationMaximization3(documents=documents,num_classes=num_classes,input_vocab=vocab)
+    P_w_given_c, P_c = ExpectationMaximization3(documents=documents,num_classes=num_classes,input_vocab=vocab)
+
+    show_top_words_per_class(P_w_given_c=P_w_given_c, vocab=vocab)
 
     print(P_w_given_c)
 
