@@ -30,8 +30,6 @@ def remove_accents(text):
     return unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore').decode('utf-8')
 
 def normalize_text(text):
-    # Lowercase
-    text = text.lower()
 
     # Normalize common Unicode dashes to hyphen
     text = text.replace('\u2013', '-').replace('\u2014', '-').replace('\u2212', '-')   
@@ -52,6 +50,9 @@ def normalize_text(text):
     punctuation_to_remove = string.punctuation.replace('-', '')
     # Remove all punctuation except '-'
     text = text.translate(str.maketrans('', '', punctuation_to_remove))
+    
+    # Lowercase
+    text = text.lower()
     
     return re.sub(r'\s+', ' ', text).strip()
 
@@ -75,7 +76,7 @@ def get_notes(file_path):
             raise ValueError("CSV file does not contain a 'text' column")
 
         for row in reader:
-            texts.append(normalize_text(row['input'].replace('\n', '')))
+            texts.append(normalize_text(row['input'].replace('\n', ' ')))
 
     return texts
 

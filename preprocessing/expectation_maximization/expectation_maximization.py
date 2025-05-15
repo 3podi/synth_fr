@@ -54,7 +54,10 @@ def ExpectationMaximization(documents, num_classes, input_vocab=None):
 def main(note_path, output_path, vocab_path, num_classes=10, vocab_size=10000):
 
     # Limit vocab, by default to words in 25-75% percentile
-    vocab = get_percentile_vocab(vocab_path)    
+    vocab = get_percentile_vocab(vocab_path)
+    for v in vocab:
+        if any(c.isupper() for c in v):
+            print('sgamato: ', v)
     print('Number of words in my vocabulary: ', len(vocab))
 
     documents = get_notes(note_path)
