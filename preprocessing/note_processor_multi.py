@@ -9,6 +9,8 @@ import argparse
 import os
 import pandas as pd
 
+from utils_preprocessing.utils import normalize_text
+
 import json
 
 # List of common French negation words
@@ -20,14 +22,12 @@ def contains_negation(sentence):
 
 def initialize_nlp(args):
     """Initialize the spaCy model and global matcher."""
-    dictionary_path, max_window, threshold = args
     global nlp, extractor
+    extractor = args
     nlp = spacy.load("fr_core_news_sm")
-    with open(dictionary_path, 'rb') as file:
-        definitions = pickle.load(file)
-    definitions = definitions.keys()
-    extractor = KeywordsExtractor(text_path=None, list_definitions=definitions, max_window=max_window, threshold=threshold)
-
+    #nlp.disable_pipe("parser")
+    #nlp.enable_pipe("senter")
+    
 def process_line(row):
     """Remove negated sentences and extract keywords."""
     # Clean and parse text
@@ -38,15 +38,43 @@ def process_line(row):
 
     # Extract keywords
     keywords = [match['match'] for match in extractor.extract(filtered_text)]
-
+    
     # Construct new row
     return row[:-2] + [keywords, row[-1]]
+    
+def process_line_normalize(row):
+    """Remove negated sentences, normalize text, and extract keywords."""
+    # Step 1: Replace newlines and parse original text (not normalized yet)
+    try:
+
+        raw_text = row[-2].replace('\n', ' ')
+        doc = nlp(raw_text)
+        
+        # Step 2: Filter out sentences containing negation
+        non_negated_text = ' '.join(sent.text for sent in doc.sents if not contains_negation(sent))
+
+        doc = nlp(non_negated_text)
+        # Step 3: Extract lemmatized tokens
+        lemmas = [token.lemma_ for token in doc if token.is_alpha and not token.is_stop]
+        lemmas = ' '.join(lemmas).strip()
+
+        # Step 4: Normalize the filtered text
+        normalized_text = normalize_text(lemmas)
+
+        # Step 5: Extract keywords
+        keywords = [match['match'] for match in extractor.extract(normalized_text)]
+
+        # Step 6: Return updated row with keywords and last original column
+        return row[:-2] + [keywords, row[-1]]
+    except Exception as e:
+        print(f"[ERROR] Failed processing row: {row[:2]}, Error: {e}")
+        return row[:-2] + [[], row[-1]]  # return empty keywords
 
 def count_lines_in_csv(file_path):
     """Count the number of lines in a CSV file efficiently"""
     with open(file_path, 'r', newline='', encoding='utf-8') as file:
         reader = csv.reader(file)
-        return sum(1 for row in reader)
+        return sum(1 for row in reader) - 1
 
 def line_generator(filename):
     """Generator to yield lines from a file."""
@@ -63,13 +91,12 @@ def line_generator2(filename):
 def line_generator3(filename, chunksize=20):
     for chunk in pd.read_csv(filename, chunksize=chunksize):
         for row in chunk.itertuples(index=False, name=None):
-            print(list(row))
             yield list(row)
 
 def write_results(results, output_file_path, lock):
     """Write results to the output file."""
     with lock:
-        with open(output_file_path, 'a', newline='', encoding='utf-8') as csvfile:
+        with open(output_file_path, 'w', newline='', encoding='utf-8') as csvfile:
             writer = csv.writer(csvfile)
             for result in results:
                 writer.writerow(result)
@@ -81,8 +108,14 @@ def main(note_path, dictionary_path, output_file_path,max_window=5,threshold=0.8
     lock = Lock()
     number_lines = count_lines_in_csv(note_path)
     print(number_lines)
+
+    with open(dictionary_path, 'rb') as file:
+        definitions = pickle.load(file)
+    definitions = definitions.keys()
     
-    args = (dictionary_path,max_window,threshold)
+    extractor = KeywordsExtractor(text_path=None, list_definitions=definitions, max_window=max_window, threshold=threshold)
+
+    args = (extractor)
     # Initialize the pool with the global matcher
     with Pool(processes=NUM_WORKERS, initializer=initialize_nlp, initargs=(args,)) as pool:
         # Process lines in parallel

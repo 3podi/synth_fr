@@ -5,9 +5,15 @@ import ast
 import pickle
 import re
 from collections import Counter
+from utils_preprocessing.utils import normalize_text
 
 import matplotlib.pyplot as plt
 from collections import defaultdict
+
+import spacy
+
+nlp = spacy.load("fr_core_news_sm")
+
 def compute_confusion_matrix(y_pred, y_true):
     pred_set = set(y_pred)
     true_set = set(y_true)
@@ -32,8 +38,14 @@ def main(results_folder, dictionary_path, compute_per_code_metrics=False, digits
     with open(dictionary_path, 'rb') as f:
         corpus = pickle.load(f)
     
-    corpus = {k.lower(): v for k, v in corpus.items()}
-
+    corpus = {normalize_text(k): v for k, v in corpus.items()}
+    #corpus = {}
+    #for k, v in vocab.items():
+    #    doc = nlp(k)
+    #    lemmas = [token.lemma_ for token in doc if token.is_alpha and not token.is_stop]
+    #    term = ' '.join(lemmas).strip()        
+    #    corpus[normalize_text(term)] = v
+    
     for extr in extractions:
         path = os.path.join(results_folder, extr)
         df = pd.read_csv(path)
@@ -45,11 +57,12 @@ def main(results_folder, dictionary_path, compute_per_code_metrics=False, digits
         # Per-code TP, FP, FN counters
         if compute_per_code_metrics:
             code_stats = defaultdict(lambda: {'tp': 0, 'fp': 0, 'fn': 0})
-
+        
+        i=0
         for idx, row in df.iterrows():
             predicted_expressions = row.iloc[-2]
             true_codes = row.iloc[-1]
-
+            
             # Convert stringified list to actual list safely
             try:
                 predicted_expressions = ast.literal_eval(predicted_expressions)
@@ -57,7 +70,7 @@ def main(results_folder, dictionary_path, compute_per_code_metrics=False, digits
                     predicted_expressions = []
             except (ValueError, SyntaxError):
                 predicted_expressions = []
-            
+           
             # Process true codes
             if isinstance(true_codes, str):
                 true_codes = true_codes.strip().split()
@@ -73,13 +86,15 @@ def main(results_folder, dictionary_path, compute_per_code_metrics=False, digits
                 predicted_codes = [
                     remove_symbols(corpus[match])[:1+digits]
                     for match in predicted_expressions
-                    if match in corpus and corpus[match]
+                    if corpus[match]
                 ]
             else:
+                
+                              
                 predicted_codes = [
                     remove_symbols(corpus[match])
                     for match in predicted_expressions
-                    if match in corpus and corpus[match]
+                    if corpus[match]
                 ]
 
             # Per-code metrics
@@ -162,7 +177,7 @@ def occurance_analysis(results_folder=None, dictionary_path=None):
     with open(dictionary_path, 'rb') as f:
         corpus = pickle.load(f)
     
-    corpus = {k.lower(): v for k, v in corpus.items()}
+    corpus = {normalize_text(k): v for k, v in corpus.items()}
     counter = Counter({element:0 for element in corpus.keys()})
     dict_codes = set(corpus.values())
     pred_codes = set()

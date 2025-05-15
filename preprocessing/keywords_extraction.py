@@ -2,12 +2,15 @@ import os
 import spacy
 from pathlib import Path
 from typing import List, Union
+import shutil
+import tempfile
 
+from utils_preprocessing.utils import normalize_text
 import pysimstring.simstring as simstring
 
 
 # Load spaCy model
-nlp = spacy.load("en_core_web_sm")
+nlp = spacy.load("fr_core_news_sm")
 
 # Constants
 VALID_POS_START_END = {"CONJ", "ADP", "DET"}
@@ -59,6 +62,11 @@ class KeywordsExtractor:
         # If no database_dir provided, create default folder
         if database_dir is None:
             database_dir = os.path.join(os.getcwd(), "simstring_db")
+            
+            # Remove the folder if it already exists
+            if os.path.exists(database_dir):
+                shutil.rmtree(database_dir)
+            
             os.makedirs(database_dir, exist_ok=True)
             self.build_database(os.path.join(database_dir, db_file), text_path, list_definitions)
         else:
@@ -77,15 +85,19 @@ class KeywordsExtractor:
         with SimstringWriter(db_path) as db:
             if text_path:
                 with open(text_path, "r", encoding="utf-8") as f:
+                    print('Building from .txt')
                     for line in f:
                         term = line.strip()
                         if term:
-                            db.insert(term.lower())
+                            db.insert(normalize_text(term))
             if list_definitions:
+                print('Building from definitions')
                 for term in list_definitions:
-                    term = term.strip()
                     if term:
-                        db.insert(term.lower())
+                        #doc = nlp(term)
+                        #lemmas = [token.lemma_ for token in doc if token.is_alpha and not token.is_stop]
+                        #term = ' '.join(lemmas).strip()
+                        db.insert(normalize_text(term))
 
     def extract(self, text: str):
         doc = nlp(text)
@@ -121,14 +133,14 @@ class KeywordsExtractor:
     def match_spans(self, spans: List[spacy.tokens.Span]):
         matches = []
         for span in spans:
-            text = span.text.lower().strip()
+            text = normalize_text(span.text)
             if not text:
                 continue
             candidates = self.reader.retrieve(text)
             for c in candidates:
                 matches.append({
                     "span": span,
-                    "match": c.strip("#"),
+                    "match": c,
                     "similarity": 1.0  # SimString reader doesn't provide score
                 })
         return matches
@@ -147,7 +159,6 @@ class KeywordsExtractor:
             used_tokens.update(idxs)
 
         return final_matches
-
 
 def main():
     input_text = 'The patient suffer of Vertigo and nausea and Migraine and Lantus (Insulin Glargine).'
