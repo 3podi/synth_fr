@@ -4,6 +4,9 @@ import argparse
 import unicodedata
 import re
 import string
+import csv
+import pickle
+import numpy as np
 
 def split_csv(input_path, output_dir, chunk_size=10000):
     """
@@ -51,6 +54,61 @@ def normalize_text(text):
     text = text.translate(str.maketrans('', '', punctuation_to_remove))
     
     return re.sub(r'\s+', ' ', text).strip()
+
+def get_notes(file_path):
+    """
+    Read a CSV file and return a list of all texts from the 'text' column.
+
+    Args:
+        file_path (str): Path to the CSV file
+
+    Returns:
+        list: List of text strings from the 'text' column
+    """
+    texts = []
+
+    with open(file_path, mode='r', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+
+        # Check if 'text' column exists
+        if 'text' not in reader.fieldnames:
+            raise ValueError("CSV file does not contain a 'text' column")
+
+        for row in reader:
+            texts.append(row['text'])
+
+    return texts
+
+def get_percentile_vocab(vocab_path, lower_percentile=25, upper_percentile=75):
+    """
+    Get vocabulary of words in the specified percentile range of occurrence distribution.
+
+    Args:
+        vocab_path (str): Path to the pickle file containing word counts
+        lower_percentile (int): Lower bound percentile (default: 25)
+        upper_percentile (int): Upper bound percentile (default: 75)
+
+    Returns:
+        set: Vocabulary of words in the specified percentile range
+    """
+    # Load word counts
+    with open(vocab_path, 'rb') as f:
+        word_counts = pickle.load(f)
+
+    # Get all counts and sort them
+    counts = [count for word, count in word_counts.most_common()]
+
+    # Calculate percentiles
+    lower_threshold = np.percentile(counts, lower_percentile)
+    upper_threshold = np.percentile(counts, upper_percentile)
+
+    # Filter words within the percentile range
+    percentile_vocab = {
+        word for word, count in word_counts.items()
+        if lower_threshold <= count <= upper_threshold
+    }
+
+    return percentile_vocab
 
 if __name__ == "__main__":
     # Example usage
