@@ -10,14 +10,14 @@ def ExpectationMaximization(documents, num_classes, input_vocab=None):
 
     # Vectorizer restricted to input vocabulary
     vectorizer = CountVectorizer(vocabulary=input_vocab)
-    X = vectorizer.fit_transform(documents).toarray() # [num_docs, vocab_size]
+    X = vectorizer.fit_transform(documents).toarray() # [D, V]
     vocab = vectorizer.get_feature_names_out()
-    num_docs, vocab_size = X.shape
+    num_docs, vocab_size = X.shape # [D, V]
 
     # === Initialize ===
-    P_c = np.full(num_classes, 1 / num_classes)  # P(c)
-    P_w_given_c = np.random.dirichlet(np.ones(vocab_size), size=num_classes)  # P(w|c) [vocab_size, N]
-    P_c_given_d = np.zeros((num_docs, num_classes))  # P(c | d) [num_docs, N]
+    P_c = np.full(num_classes, 1 / num_classes)  # P(c) [C,]
+    P_w_given_c = np.random.dirichlet(np.ones(vocab_size), size=num_classes)  # P(w|c) [C, V]
+    P_c_given_d = np.zeros((num_docs, num_classes))  # P(c | d) [D, C]
 
     # === EM Loop ===
     for iteration in tqdm(range(20), desctiption='Iteration EM'):
@@ -25,7 +25,7 @@ def ExpectationMaximization(documents, num_classes, input_vocab=None):
         for d in range(num_docs):
             log_probs = []
             for c in range(num_classes):
-                log_likelihood = np.sum(X[d] * np.log(P_w_given_c[c] + 1e-10))
+                log_likelihood = np.sum(X[d] * np.log(P_w_given_c[c] + 1e-10)) 
                 log_probs.append(np.log(P_c[c]) + log_likelihood)
             max_log = max(log_probs)
             probs = np.exp(np.array(log_probs) - max_log)
@@ -51,6 +51,44 @@ def ExpectationMaximization(documents, num_classes, input_vocab=None):
     
     return P_w_given_c
 
+def ExpectationMaximization2(documents, num_classes, input_vocab=None):
+    vectorizer = CountVectorizer(vocabulary=input_vocab)
+    X = vectorizer.fit_transform(documents).toarray().astype(np.float32)  # shape (D, V)
+    vocab = vectorizer.get_feature_names_out()
+    D, V = X.shape
+
+    # Initialize
+    P_c = np.full((num_classes,), 1 / num_classes, dtype=np.float32)      # shape (C,)
+    P_w_given_c = np.random.dirichlet(np.ones(V), size=num_classes).astype(np.float32)  # shape (C, V)
+
+    for iteration in range(20):
+        # ---------- E-step ----------
+        # Compute log P(w|c) for all docs and classes
+        # log_likelihoods: shape (D, C)
+        log_P_w_given_c = np.log(P_w_given_c + 1e-10).astype(np.float32)   # shape (C, V)
+        log_likelihoods = X @ log_P_w_given_c.T                            # shape (D, C)
+
+        log_joint = log_likelihoods + np.log(P_c + 1e-10)[None, :]         # shape (D, C)
+        max_log = np.max(log_joint, axis=1, keepdims=True)                # for numerical stability
+        probs = np.exp(log_joint - max_log)                               # shape (D, C)
+        P_c_given_d = probs / np.sum(probs, axis=1, keepdims=True)        # shape (D, C)
+
+        # ---------- M-step ----------
+        P_c = np.mean(P_c_given_d, axis=0)                                 # shape (C,)
+
+        # Compute expected word counts: P_c_given_d.T @ X gives shape (C, V)
+        weighted_counts = P_c_given_d.T @ X                                # shape (C, V)
+        total_words_per_class = weighted_counts.sum(axis=1, keepdims=True)  # shape (C, 1)
+        P_w_given_c = weighted_counts / (total_words_per_class + 1e-10)    # shape (C, V)
+
+    # ---------- Output ----------
+    top_k=5
+    for c in range(num_classes):
+        print(f"\nClass {c} (P(c)={P_c[c]:.2f}):")
+        top_indices = np.argsort(P_w_given_c[c])[::-1][:top_k]
+        for idx in top_indices:
+            print(f"  {vocab[idx]:<10} -> P(w|c) = {P_w_given_c[c][idx]:.3f}")
+
 def main(note_path, output_path, vocab_path, num_classes=10, vocab_size=10000):
 
     # Limit vocab, by default to words in 25-75% percentile
@@ -59,7 +97,7 @@ def main(note_path, output_path, vocab_path, num_classes=10, vocab_size=10000):
 
     documents = get_notes(note_path)
 
-    P_w_given_c = ExpectationMaximization(documents=documents,num_classes=num_classes,input_vocab=vocab)
+    P_w_given_c = ExpectationMaximization2(documents=documents,num_classes=num_classes,input_vocab=vocab)
 
     print(P_w_given_c)
 
