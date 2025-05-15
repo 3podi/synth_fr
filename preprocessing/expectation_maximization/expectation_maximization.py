@@ -2,9 +2,9 @@ import numpy as np
 import argparse
 from sklearn.feature_extraction.text import CountVectorizer
 from collections import defaultdict
-import tqdm
+from tqdm import tqdm
 import pickle
-from utils_preprocessing.utils import get_notes, get_percentile_vocab
+from preprocessing.utils_preprocessing.utils import get_notes, get_percentile_vocab
 
 def ExpectationMaximization(documents, num_classes, input_vocab=None):
 
@@ -20,7 +20,7 @@ def ExpectationMaximization(documents, num_classes, input_vocab=None):
     P_c_given_d = np.zeros((num_docs, num_classes))  # P(c | d) [num_docs, N]
 
     # === EM Loop ===
-    for iteration in tqdm(range(20), desctiption='Iteration EM'):
+    for iteration in tqdm(range(20), desc='Iteration EM'):
         # E-step
         for d in range(num_docs):
             log_probs = []
@@ -69,14 +69,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description= 'Setting notes, vocab and output path and em params')
     parser.add_argument('note_path', type=str, help='Path to the notes')
     parser.add_argument('output_file_path', type=str, help='Path to folder where to store the results')
-    parser.add_argument('--vocab_path', type=str, action='store_true', help='Path to dictionary for keywords extraction')
-    parser.add_argument('--num_classes', type=int, help='List of similarity thresholds')
+    parser.add_argument('--vocab_path', type=str, default=None, help='Path to dictionary for keywords extraction')
+    parser.add_argument('--num_classes', type=int, default=10, help='List of similarity thresholds')
     
     args = parser.parse_args()
     
     note_path = args.note_path
     output_path = args.output_file_path
-    vocab_path = args.dictionary_path
+    vocab_path = args.vocab_path
     num_classes = args.num_classes
 
     main(note_path=note_path, output_path=output_path, vocab_path=vocab_path, num_classes=num_classes)
