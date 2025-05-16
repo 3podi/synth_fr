@@ -88,7 +88,7 @@ def main(results_folder, dictionary_path, compute_per_code_metrics=False, digits
                 predicted_codes = [
                     remove_symbols(corpus[match])
                     for match in predicted_expressions
-                    if corpus[match]
+                    if corpus[normalize_text(match)]
                 ]
 
             # Per-code metrics
@@ -217,6 +217,7 @@ def occurance_analysis(results_folder=None, dictionary_path=None):
                 total_predicted_words += sum([len(expression.split()) for expression in predicted_expressions])
 
     missing_codes = codes - dict_codes
+    print('Missing codes: ', missing_codes)
     zero_codes = dict_codes - pred_codes    
     zero_elements = [element for element, count in counter.items() if count == 0]
     print(f'Number of expression in dict never matched over total expressions: {len(zero_elements)}/{len(set(corpus.keys()))}')

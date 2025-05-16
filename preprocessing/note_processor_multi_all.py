@@ -9,6 +9,8 @@ import argparse
 import os
 import pandas as pd
 
+from utils_preprocessing.utils import normalize_text
+
 import json
 
 # List of common French negation words
@@ -20,13 +22,9 @@ def contains_negation(sentence):
 
 def initialize_nlp(args):
     """Initialize the spaCy model and global matcher."""
-    dictionary_path, max_window, threshold = args
     global nlp, extractor
+    extractor = args
     nlp = spacy.load("fr_core_news_sm")
-    with open(dictionary_path, 'rb') as file:
-        definitions = pickle.load(file)
-    definitions = definitions.keys()
-    extractor = KeywordsExtractor(text_path=None, list_definitions=definitions, max_window=max_window, threshold=threshold)
 
 def process_line(row):
     """Remove negated sentences and extract keywords."""
@@ -68,7 +66,7 @@ def line_generator3(filename, chunksize=1):
 def write_results(results, output_file_path, lock):
     """Write results to the output file."""
     with lock:
-        with open(output_file_path, 'a', newline='', encoding='utf-8') as csvfile:
+        with open(output_file_path, 'w', newline='', encoding='utf-8') as csvfile:
             writer = csv.writer(csvfile)
             for result in results:
                 writer.writerow(result)
@@ -82,7 +80,14 @@ def main(note_path, dictionary_path, output_file_path,max_window=5,threshold=0.8
     #number_lines = 450654
     print(number_lines)
     
-    args = (dictionary_path,max_window,threshold)
+    with open(dictionary_path, 'rb') as file:
+        definitions = pickle.load(file)
+    definitions = definitions.keys()
+    
+    extractor = KeywordsExtractor(text_path=None, list_definitions=definitions, max_window=max_window, threshold=threshold)
+
+    args = (extractor)
+    
     # Initialize the pool with the global matcher
     with Pool(processes=NUM_WORKERS, initializer=initialize_nlp, initargs=(args,)) as pool:
         # Process lines in parallel
