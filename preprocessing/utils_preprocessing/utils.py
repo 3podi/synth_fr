@@ -81,7 +81,8 @@ def get_notes(file_path):
         # Check if 'text' column exists
         if 'text' not in reader.fieldnames:
             raise ValueError("CSV file does not contain a 'text' column")
-
+        
+        print('Reading documents..')
         for row in reader:
             texts.append(normalize_text(row['text'].replace('\n', ' ')))
 
@@ -100,9 +101,11 @@ def get_percentile_vocab(vocab_path, lower_percentile=50, upper_percentile=80):
         set: Vocabulary of words in the specified percentile range
     """
     # Load word counts
+    print('Reading vocab')
     with open(vocab_path, 'rb') as f:
         word_counts = pickle.load(f)
-
+    
+    print('Getting counts')
     # Get all counts and sort them
     counts = [count for word, count in word_counts.most_common()]
 
@@ -111,7 +114,8 @@ def get_percentile_vocab(vocab_path, lower_percentile=50, upper_percentile=80):
     upper_threshold = np.percentile(counts, upper_percentile)
     
     stops = {normalize_text(stop) for stop in french_stopwords}
-
+    
+    print('filtering stops')
     # Filter words within the percentile range
     percentile_vocab = {
         normalize_text(word) for word, count in word_counts.items()

@@ -21,6 +21,6 @@ python --version
 echo "Using pip: $(which pip)"
 pip --version
 
-export PYTHONPATH="$PWD"
+#export PYTHONPATH="$PWD"
 
-python3 preprocessing/expectation_maximization/expectation_maximization.py ../../data/crh_omop_2024/all/train.csv ../ --vocab_path ../counter_1gram.pkl --iters 50
+python preprocessing/expectation_maximization/expectation_maximization.py ../../data/crh_omop_2024/all/train.csv ../ --vocab_path ../counter_1gram.pkl --iters 50

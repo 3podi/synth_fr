@@ -3,6 +3,13 @@ import argparse
 from sklearn.feature_extraction.text import CountVectorizer
 from tqdm import tqdm
 from scipy.sparse import csr_matrix
+
+
+import sys
+import os
+
+# Add the current working directory (project root) to sys.path
+sys.path.insert(0, os.getcwd())
 from preprocessing.utils_preprocessing.utils import get_notes, get_percentile_vocab
 
 def show_top_words_per_class(P_w_given_c, vocab, top_k=10, class_names=None):
@@ -193,11 +200,14 @@ def ExpectationMaximization3(documents, num_classes, input_vocab=None, iters=10,
 def main(note_path, output_path, vocab_path, num_classes=23, iters=10):
 
     # Limit vocab, by default to words in 25-75% percentile
+    print('Getting vocab')
     vocab = get_percentile_vocab(vocab_path)    
     print('Number of words in my vocabulary: ', len(vocab))
-
+    
+    print('Getting documents')
     documents = get_notes(note_path)
-
+    print('Documents acquired')
+    
     P_w_given_c, P_c = ExpectationMaximization3(documents=documents,num_classes=num_classes,input_vocab=vocab)
 
     show_top_words_per_class(P_w_given_c=P_w_given_c, vocab=vocab)
