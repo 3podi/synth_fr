@@ -39,12 +39,6 @@ def main(results_folder, dictionary_path, compute_per_code_metrics=False, digits
         corpus = pickle.load(f)
     
     corpus = {normalize_text(k): v for k, v in corpus.items()}
-    #corpus = {}
-    #for k, v in vocab.items():
-    #    doc = nlp(k)
-    #    lemmas = [token.lemma_ for token in doc if token.is_alpha and not token.is_stop]
-    #    term = ' '.join(lemmas).strip()        
-    #    corpus[normalize_text(term)] = v
     
     for extr in extractions:
         path = os.path.join(results_folder, extr)
@@ -182,6 +176,8 @@ def occurance_analysis(results_folder=None, dictionary_path=None):
     dict_codes = set(corpus.values())
     pred_codes = set()
     codes = set()
+    total_words = 0
+    total_predicted_words = 0
 
     for extr in extractions:
         path = os.path.join(results_folder, extr)
@@ -189,6 +185,7 @@ def occurance_analysis(results_folder=None, dictionary_path=None):
 
         for idx, row in df.iterrows():
             predicted_expressions = row.iloc[-2]
+            total_words += int(row.iloc[2])
         
             try:
                 predicted_expressions = ast.literal_eval(predicted_expressions)
@@ -214,6 +211,11 @@ def occurance_analysis(results_folder=None, dictionary_path=None):
             codes.update(true_codes)
             counter.update(predicted_expressions)
 
+            if not predicted_expressions:
+                words = 0
+            else:
+                total_predicted_words += sum([len(expression.split()) for expression in predicted_expressions])
+
     missing_codes = codes - dict_codes
     zero_codes = dict_codes - pred_codes    
     zero_elements = [element for element, count in counter.items() if count == 0]
@@ -222,6 +224,7 @@ def occurance_analysis(results_folder=None, dictionary_path=None):
     print(f'Number of codes not available in my dict but present in the data over total codes in data {len(missing_codes)}/{len(codes)}')
     print(f'Number codes not present in the data: {len(dict_codes-codes)}')
 
+    print('Percentage extacted words: ', total_predicted_words/total_words * 100)
 
     
 
