@@ -197,7 +197,7 @@ def ExpectationMaximization3(documents, num_classes, input_vocab=None, iters=10,
     return P_w_given_c, P_c
 
 
-def main(note_path, output_path, vocab_path, num_classes=23, iters=10):
+def main(note_path, output_path, vocab_path, num_classes=23, iters=10, save_flag=False):
 
     # Limit vocab, by default to words in 25-75% percentile
     print('Getting vocab')
@@ -212,7 +212,8 @@ def main(note_path, output_path, vocab_path, num_classes=23, iters=10):
 
     show_top_words_per_class(P_w_given_c=P_w_given_c, vocab=vocab)
 
-    np.save(f'{output_path}em_output.npy', P_w_given_c)
+    if save_flag:
+        np.save(f'{output_path}em_output.npy', P_w_given_c)
 
 if __name__ == '__main__':
 
@@ -222,6 +223,7 @@ if __name__ == '__main__':
     parser.add_argument('--vocab_path', type=str, default=None, help='Path to dictionary for keywords extraction')
     parser.add_argument('--num_classes', type=int, default=23, help='List of similarity thresholds')
     parser.add_argument('--iters', type=int, default=10, help='Max iterations of the algorithm')
+    parser.add_argument('--save', action='store_true', help='Optionally save P(w|c)')
     
     args = parser.parse_args()
     
@@ -230,5 +232,6 @@ if __name__ == '__main__':
     vocab_path = args.vocab_path
     num_classes = args.num_classes
     iters = args.iters
+    save_flag = args.save
 
-    main(note_path=note_path, output_path=output_path, vocab_path=vocab_path, num_classes=num_classes, iters=iters)
+    main(note_path=note_path, output_path=output_path, vocab_path=vocab_path, num_classes=num_classes, iters=iters, save_flag=save_flag)
