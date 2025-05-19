@@ -106,7 +106,7 @@ def get_mutually_exclusive_top_words(P_w_given_c, vocab, top_k=100, class_names=
         search_k: how many top candidates to search from per class (default: 5 * top_k)
     """
     C, V = P_w_given_c.shape
-    vocab = np.asarray(vocab)
+    vocab = np.asarray(list(vocab))
     used_words = set()
     assigned_words = [[] for _ in range(C)]
     search_k = search_k or top_k * 5
