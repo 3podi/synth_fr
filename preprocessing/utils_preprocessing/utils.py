@@ -88,7 +88,7 @@ def get_notes(file_path,column='input', labels=False):
         for row in reader:
             texts.append(normalize_text(row[column].replace('\n', ' ')))
             if labels:
-                predicted_expressions = ast.literal_eval(row[column])
+                predicted_expressions = ast.literal_eval(row['labels'])
                 if not isinstance(predicted_expressions, list):
                     predicted_expressions = []
                 codes.append(predicted_expressions)
