@@ -94,6 +94,52 @@ def show_top_words_per_class(P_w_given_c, vocab, top_k=10, class_names=None):
             prob = row[idx]
             print(f"{rank+1:>2}. {vocab[idx]:<15} (P={prob:.6f})")
 
+def get_mutually_exclusive_top_words(P_w_given_c, vocab, top_k=100, class_names=None, search_k=None):
+    """
+    Finds top_k words for each class such that no word is shared between classes.
+    
+    Args:
+        P_w_given_c: ndarray or sparse (C, V)
+        vocab: list or array of vocabulary words
+        top_k: number of unique words to assign per class
+        class_names: optional list of class names
+        search_k: how many top candidates to search from per class (default: 5 * top_k)
+    """
+    C, V = P_w_given_c.shape
+    vocab = np.asarray(vocab)
+    used_words = set()
+    assigned_words = [[] for _ in range(C)]
+    search_k = search_k or top_k * 5
+
+    # Precompute sorted indices for all classes
+    if issparse(P_w_given_c):
+        sorted_indices = [np.argsort(P_w_given_c.getrow(c).toarray().ravel())[::-1] for c in range(C)]
+    else:
+        sorted_indices = [np.argsort(P_w_given_c[c])[::-1] for c in range(C)]
+
+    for c in range(C):
+        name = f"Class {c}" if class_names is None else class_names[c]
+        print(f"\n📚 Top {top_k} exclusive words for {name}:")
+        row = P_w_given_c.getrow(c).toarray().ravel() if issparse(P_w_given_c) else P_w_given_c[c]
+        selected = []
+        
+        for idx in sorted_indices[c][:search_k]:
+            word = vocab[idx]
+            if word not in used_words:
+                selected.append((word, row[idx]))
+                used_words.add(word)
+            if len(selected) == top_k:
+                break
+        
+        assigned_words[c] = selected
+        for i, (word, prob) in enumerate(selected):
+            print(f"{i+1:>2}. {word:<15} (P={prob:.6f})")
+        
+        if len(selected) < top_k:
+            print(f"   ⚠ Only found {len(selected)} exclusive words.")
+
+    return assigned_words
+
 def main(note_path, output_path, vocab_path, save_flag=False):
 
     # Limit vocab, by default to words in 25-75% percentile
