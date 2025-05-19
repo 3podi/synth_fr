@@ -10,7 +10,6 @@ from preprocessing.utils_preprocessing.utils import get_notes, get_percentile_vo
 
 def NaiveBayes(documents, labels, input_vocab=None, batch_size=10000, dtype=np.float32, alpha=1.0):
     V = len(input_vocab)
-    C = num_classes
     word2idx = {w: i for i, w in enumerate(input_vocab)}
     D = len(documents)
     
@@ -32,7 +31,7 @@ def NaiveBayes(documents, labels, input_vocab=None, batch_size=10000, dtype=np.f
     all_class_names = sorted(set(c for doc_labels in labels for c in doc_labels))
 
     class2idx = {name: i for i, name in enumerate(all_class_names)}
-    idx2class = {i: name for name, i in class2idx.items()}
+    #idx2class = {i: name for name, i in class2idx.items()}
     C = len(all_class_names)
 
     # Initialize class priors and word counts
