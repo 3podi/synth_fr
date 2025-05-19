@@ -65,7 +65,7 @@ def NaiveBayes(documents, labels, input_vocab=None, batch_size=500, dtype=np.flo
     P_w_given_c = P_w_given_c.multiply(1 / row_sums[:, None])
 
     P_c = class_doc_counts / class_doc_counts.sum()
-    return P_c, P_w_given_c
+    return P_w_given_c, P_c
 
 def show_top_words_per_class(P_w_given_c, vocab, top_k=10, class_names=None):
     """
