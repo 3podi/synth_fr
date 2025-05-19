@@ -7,7 +7,6 @@ import string
 import csv
 import pickle
 import numpy as np
-import ast
 
 french_stopwords = set([
     "alors", "au", "aucuns", "aussi", "autre", "avant", "avec", "avoir", "bon", "car", "ce", "cela", "ces", "ceux", "chaque", "ci", "comme", "comment", "dans", "des", "du", "dedans", "dehors", "depuis", "devrait", "doit", "donc", "dos", "droite", "début", "elle", "elles", "en", "encore", "essai", "est", "et", "eu", "fait", "faites", "fois", "font", "force", "haut", "hors", "ici", "il", "ils", "je", "juste", "la", "le", "les", "leur", "là", "ma", "maintenant", "mais", "mes", "mine", "moins", "mon", "mot", "même", "ni", "nommés", "notre", "nous", "nouveaux", "ou", "où", "par", "parce", "parole", "pas", "personnes", "peut", "peu", "pièce", "plupart", "pour", "pourquoi", "quand", "que", "quel", "quelle", "quelles", "quels", "qui", "sa", "sans", "ses", "seulement", "si", "sien", "son", "sont", "sous", "soyez", "sujet", "sur", "ta", "tandis", "tellement", "tels", "tes", "ton", "tous", "tout", "trop", "très", "tu", "voient", "vont", "votre", "vous", "vu", "ça", "étaient", "état", "étions", "été", "être"
@@ -17,6 +16,10 @@ import spacy
 nlp = spacy.load("fr_core_news_sm")
 french_stopwords = set(nlp.Defaults.stop_words)
 del nlp
+
+def remove_symbols(text):
+    # Remove everything that's not a letter, digit, or whitespace
+    return re.sub(r'[^\w\s]', '', text)
 
 def split_csv(input_path, output_dir, chunk_size=10000):
     """
@@ -88,10 +91,9 @@ def get_notes(file_path,column='input', labels=False):
         for row in reader:
             texts.append(normalize_text(row[column].replace('\n', ' ')))
             if labels:
-                predicted_expressions = ast.literal_eval(row['labels'])
-                if not isinstance(predicted_expressions, list):
-                    predicted_expressions = []
-                codes.append(predicted_expressions)
+                true_codes = row['labels'].strip().split()
+                true_codes = [remove_symbols(code) for code in true_codes]
+                codes.append(true_codes)
 
 
     if labels:
