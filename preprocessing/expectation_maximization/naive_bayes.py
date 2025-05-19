@@ -101,4 +101,4 @@ if __name__ == '__main__':
     vocab_path = args.vocab_path
     save_flag = args.save
     
-    main(note_path=note_path, output_path=output_path, vocab_path=vocab_path, num_classes=num_classes, iters=iters, save_flag=save_flag)
+    main(note_path=note_path, output_path=output_path, vocab_path=vocab_path, save_flag=save_flag)
