@@ -1,6 +1,6 @@
 import numpy as np
 import argparse
-from scipy.sparse import csr_matrix, dok_matrix
+from scipy.sparse import csr_matrix, dok_matrix, issparse
 import sys
 import os 
 
@@ -69,24 +69,30 @@ def NaiveBayes(documents, labels, input_vocab=None, batch_size=500, dtype=np.flo
 
 def show_top_words_per_class(P_w_given_c, vocab, top_k=10, class_names=None):
     """
-    Display top_k words for each class based on P(w|c).
+    Display top_k words for each class based on P(w|c), supporting sparse matrices.
     
     Args:
-        P_w_given_c: shape (C, V)
-        vocab: list of words
+        P_w_given_c: shape (C, V) — can be dense (ndarray) or sparse (csr_matrix)
+        vocab: list or array of words
         top_k: number of words to show per class
         class_names: list of class names (optional)
     """
     C, V = P_w_given_c.shape
-    vocab = np.array(list(vocab))
+    vocab = np.array(vocab)
 
     for c in range(C):
         name = f"Class {c}" if class_names is None else class_names[c]
         print(f"\n📚 Top {top_k} words for {name}:")
-        top_indices = np.argsort(P_w_given_c[c])[::-1][:top_k]
+
+        if issparse(P_w_given_c):
+            row = P_w_given_c.getrow(c).toarray().ravel()  # shape (V,)
+        else:
+            row = P_w_given_c[c]
+
+        top_indices = np.argsort(row)[::-1][:top_k]
         for rank, idx in enumerate(top_indices):
-            prob = P_w_given_c[c, idx]
-            print(f"{rank+1:>2}. {vocab[idx]:<15} (P={prob:.4f})")
+            prob = row[idx]
+            print(f"{rank+1:>2}. {vocab[idx]:<15} (P={prob:.6f})")
 
 def main(note_path, output_path, vocab_path, save_flag=False):
 
