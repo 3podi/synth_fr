@@ -41,8 +41,8 @@ def NaiveBayes(documents, labels, input_vocab=None, batch_size=10000, dtype=np.f
     for i, doc_labels in enumerate(labels):
         x_i = X.getrow(i)
         for c in doc_labels:
-            class_doc_counts[c] += 1
-            word_counts[c] += x_i.toarray()[0]
+            class_doc_counts[class2idx[c]] += 1
+            word_counts[class2idx[c]] += x_i.toarray()[0]
 
     # Apply Laplace smoothing
     P_c = class_doc_counts / class_doc_counts.sum()  # Prior probabilities P(c)
