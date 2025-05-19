@@ -149,7 +149,7 @@ def main(note_path, output_path, vocab_path, save_flag=False):
     
     P_w_given_c, P_c = NaiveBayes(documents=documents, labels=labels, input_vocab=vocab)
 
-    show_top_words_per_class(P_w_given_c=P_w_given_c, vocab=vocab)
+    get_mutually_exclusive_top_words(P_w_given_c=P_w_given_c, vocab=vocab)
 
     if save_flag:
         np.save(f'{output_path}naive_bayes_output.npy', P_w_given_c)
