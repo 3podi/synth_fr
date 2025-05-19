@@ -1,6 +1,6 @@
 import numpy as np
 import argparse
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, dok_matrix
 import sys
 import os 
 
@@ -8,7 +8,7 @@ import os
 sys.path.insert(0, os.getcwd())
 from preprocessing.utils_preprocessing.utils import get_notes, get_percentile_vocab
 
-def NaiveBayes(documents, labels, input_vocab=None, batch_size=10000, dtype=np.float32, alpha=1.0):
+def NaiveBayes(documents, labels, input_vocab=None, batch_size=500, dtype=np.float32, alpha=1.0):
     V = len(input_vocab)
     word2idx = {w: i for i, w in enumerate(input_vocab)}
     D = len(documents)
@@ -34,21 +34,38 @@ def NaiveBayes(documents, labels, input_vocab=None, batch_size=10000, dtype=np.f
     #idx2class = {i: name for name, i in class2idx.items()}
     C = len(all_class_names)
 
-    # Initialize class priors and word counts
-    class_doc_counts = np.zeros(C, dtype=dtype)      # Number of documents per class
-    word_counts = np.zeros((C, V), dtype=dtype)      # Sum of word counts per class
+    class_doc_counts = np.zeros(C, dtype=dtype)
+    word_counts = dok_matrix((C, V), dtype=dtype)
 
-    for i, doc_labels in enumerate(labels):
-        x_i = X.getrow(i)
-        for c in doc_labels:
-            class_doc_counts[class2idx[c]] += 1
-            word_counts[class2idx[c]] += x_i.toarray()[0]
+    for start in range(0, D, batch_size):
+        end = min(start + batch_size, D)
+        X_batch = X[start:end]
+        labels_batch = labels[start:end]
+        
+        for i, doc_labels in enumerate(labels_batch):
+            row = X_batch[i]
+            idxs = row.indices
+            vals = row.data
 
-    # Apply Laplace smoothing
-    P_c = class_doc_counts / class_doc_counts.sum()  # Prior probabilities P(c)
-    P_w_given_c = (word_counts + alpha) / (word_counts.sum(axis=1, keepdims=True) + alpha * V)
+            for class_name in doc_labels:
+                c = class2idx[class_name]
+                class_doc_counts[c] += 1
+                for j, v in zip(idxs, vals):
+                    word_counts[c, j] += v
 
-    return P_w_given_c, P_c
+    # Convert to CSR for efficient row-wise ops
+    word_counts = word_counts.tocsr()
+
+    # Compute smoothed probabilities
+    row_sums = word_counts.sum(axis=1).A1  # shape (C,)
+    P_w_given_c = word_counts.copy()
+    for c in range(C):
+        P_w_given_c.data[P_w_given_c.indptr[c]:P_w_given_c.indptr[c+1]] += alpha
+    row_sums += alpha * V
+    P_w_given_c = P_w_given_c.multiply(1 / row_sums[:, None])
+
+    P_c = class_doc_counts / class_doc_counts.sum()
+    return P_c, P_w_given_c
 
 def show_top_words_per_class(P_w_given_c, vocab, top_k=10, class_names=None):
     """
