@@ -88,10 +88,10 @@ def main(note_path, output_path, vocab_path, save_flag=False):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description= 'Setting notes, vocab and output path and em params')
+    parser = argparse.ArgumentParser(description= 'Setting notes, vocab and output path')
     parser.add_argument('note_path', type=str, help='Path to the notes')
     parser.add_argument('output_file_path', type=str, help='Path to folder where to store the results')
-    parser.add_argument('--vocab_path', type=str, default=None, help='Path to dictionary for keywords extraction')
+    parser.add_argument('--vocab_path', type=str, default=None, help='Path to 1-gram counter')
     parser.add_argument('--save', action='store_true', help='Optionally save P(w|c)')
     
     args = parser.parse_args()
@@ -99,8 +99,6 @@ if __name__ == '__main__':
     note_path = args.note_path
     output_path = args.output_file_path
     vocab_path = args.vocab_path
-    num_classes = args.num_classes
-    iters = args.iters
     save_flag = args.save
     
     main(note_path=note_path, output_path=output_path, vocab_path=vocab_path, num_classes=num_classes, iters=iters, save_flag=save_flag)
