@@ -94,7 +94,7 @@ def show_top_words_per_class(P_w_given_c, vocab, top_k=10, class_names=None):
             prob = row[idx]
             print(f"{rank+1:>2}. {vocab[idx]:<15} (P={prob:.6f})")
 
-def get_mutually_exclusive_top_words(P_w_given_c, vocab, top_k=100, class_names=None, search_k=None):
+def get_mutually_exclusive_top_words(P_w_given_c, vocab, top_k=10, class_names=None, search_k=None):
     """
     Finds top_k words for each class such that no word is shared between classes.
     
@@ -131,7 +131,7 @@ def get_mutually_exclusive_top_words(P_w_given_c, vocab, top_k=100, class_names=
             if len(selected) == top_k:
                 break
         
-        assigned_words[c] = selected
+        #assigned_words[c] = selected
         for i, (word, prob) in enumerate(selected):
             print(f"{i+1:>2}. {word:<15} (P={prob:.6f})")
         
