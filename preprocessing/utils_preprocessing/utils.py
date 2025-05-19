@@ -7,6 +7,7 @@ import string
 import csv
 import pickle
 import numpy as np
+import ast
 
 french_stopwords = set([
     "alors", "au", "aucuns", "aussi", "autre", "avant", "avec", "avoir", "bon", "car", "ce", "cela", "ces", "ceux", "chaque", "ci", "comme", "comment", "dans", "des", "du", "dedans", "dehors", "depuis", "devrait", "doit", "donc", "dos", "droite", "début", "elle", "elles", "en", "encore", "essai", "est", "et", "eu", "fait", "faites", "fois", "font", "force", "haut", "hors", "ici", "il", "ils", "je", "juste", "la", "le", "les", "leur", "là", "ma", "maintenant", "mais", "mes", "mine", "moins", "mon", "mot", "même", "ni", "nommés", "notre", "nous", "nouveaux", "ou", "où", "par", "parce", "parole", "pas", "personnes", "peut", "peu", "pièce", "plupart", "pour", "pourquoi", "quand", "que", "quel", "quelle", "quelles", "quels", "qui", "sa", "sans", "ses", "seulement", "si", "sien", "son", "sont", "sous", "soyez", "sujet", "sur", "ta", "tandis", "tellement", "tels", "tes", "ton", "tous", "tout", "trop", "très", "tu", "voient", "vont", "votre", "vous", "vu", "ça", "étaient", "état", "étions", "été", "être"
@@ -63,7 +64,7 @@ def normalize_text(text):
     
     return re.sub(r'\s+', ' ', text).strip()
 
-def get_notes(file_path):
+def get_notes(file_path,column='input', labels=False):
     """
     Read a CSV file and return a list of all texts from the 'text' column.
 
@@ -74,19 +75,29 @@ def get_notes(file_path):
         list: List of text strings from the 'text' column
     """
     texts = []
+    codes = []
 
     with open(file_path, mode='r', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
 
         # Check if 'text' column exists
-        if 'input' not in reader.fieldnames:
-            raise ValueError("CSV file does not contain a 'text' column")
+        if column not in reader.fieldnames:
+            raise ValueError(f"CSV file does not contain a {column} column")
         
         print('Reading documents..')
         for row in reader:
-            texts.append(normalize_text(row['input'].replace('\n', ' ')))
+            texts.append(normalize_text(row[column].replace('\n', ' ')))
+            if labels:
+                predicted_expressions = ast.literal_eval(row[column])
+                if not isinstance(predicted_expressions, list):
+                    predicted_expressions = []
+                codes.append(predicted_expressions)
 
-    return texts
+
+    if labels:
+        return texts, codes
+    else:
+        return texts
 
 def get_percentile_vocab(vocab_path, lower_percentile=50, upper_percentile=80):
     """
