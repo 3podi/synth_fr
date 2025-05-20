@@ -78,7 +78,7 @@ def show_top_words_per_class(P_w_given_c, vocab, top_k=10, class_names=None):
         class_names: list of class names (optional)
     """
     C, V = P_w_given_c.shape
-    vocab = np.array(vocab)
+    vocab = np.array(list(vocab))
 
     for c in range(C):
         name = f"Class {c}" if class_names is None else class_names[c]
@@ -143,13 +143,15 @@ def get_mutually_exclusive_top_words(P_w_given_c, vocab, top_k=10, class_names=N
 def main(note_path, output_path, vocab_path, save_flag=False):
 
     # Limit vocab, by default to words in 25-75% percentile
-    vocab = get_percentile_vocab(vocab_path)    
+    vocab = get_percentile_vocab(vocab_path, 25, 75)    
     
     documents, labels = get_notes(note_path,labels=True)
     
     P_w_given_c, P_c = NaiveBayes(documents=documents, labels=labels, input_vocab=vocab)
-
-    get_mutually_exclusive_top_words(P_w_given_c=P_w_given_c, vocab=vocab)
+    
+    print('Finished')
+    get_mutually_exclusive_top_words(P_w_given_c=P_w_given_c, vocab=vocab, top_k=20)
+    #show_top_words_per_class(P_w_given_c=P_w_given_c, vocab=vocab)
 
     if save_flag:
         np.save(f'{output_path}naive_bayes_output.npy', P_w_given_c)
