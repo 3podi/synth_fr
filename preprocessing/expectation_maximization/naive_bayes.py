@@ -152,7 +152,7 @@ def get_mutually_exclusive_top_words2(P_w_given_c, vocab, top_k=10, class_names=
         search_k: how many top candidates to search from per class (default: 5 * top_k)
     """
     C, V = P_w_given_c.shape
-    vocab = np.asarray(vocab)
+    vocab = np.asarray(list(vocab))
     used_word_indices = set()
     search_k = search_k or top_k * 5
 
@@ -184,7 +184,7 @@ def get_mutually_exclusive_top_words2(P_w_given_c, vocab, top_k=10, class_names=
 def main(note_path, output_path, vocab_path, save_flag=False):
 
     # Limit vocab, by default to words in 25-75% percentile
-    vocab = get_percentile_vocab(vocab_path, 25, 75)    
+    vocab = get_percentile_vocab(vocab_path, 25, 50)    
     
     documents, labels = get_notes(note_path,labels=True)
     
