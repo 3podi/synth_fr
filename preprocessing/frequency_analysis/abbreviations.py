@@ -36,6 +36,7 @@ def find_acronyms(text, cap_ratio_threshold=0.7):
         r'\((?P<acronym>[A-Z]{2,})\)',           # Parentheses
         r'\b(?:[A-Z]{2,}-)+[A-Z]{2,}\b',         # Hyphenated
         r'\b(?:[A-Z][a-z]+\s)+\([A-Z]{2,}\)',    # Long-form followed by acronym
+        r'\b(?:[A-Z]\s+){2,}[A-Z]\b'             # Sequence of whitespace separeted letters
     ]
 
     matches = []
@@ -51,7 +52,7 @@ def find_acronyms(text, cap_ratio_threshold=0.7):
     #words = text.split()
     words = re.findall(r"[A-Za-z\-\.]+", text)
     for word in words:
-        if capital_ratio(word, threshold=cap_ratio_threshold):
+        if len(word)>1 and capital_ratio(word, threshold=cap_ratio_threshold):
             matches.append(word)
 
     return matches
