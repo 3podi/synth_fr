@@ -84,10 +84,10 @@ def abbreviations_searcher(file, column, cap_ratio=0.5):
 
 def main(file_path,column,cap_ratio,save_flag):
 
-    counter = abbreviations_searcher(file_path,column,cap_ratio)
+    counter = abbreviations_searcher(file_path,column,cap_ratio,n_print=10)
 
     print("Top 10 abbreviations:")
-    for k, v in counter.most_common(10):
+    for k, v in counter.most_common(n_print):
         print(" ".join(k), ":", v)
         
     # Save
@@ -103,9 +103,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description= 'Setting paths and params')
     parser.add_argument('file_path', type=str, help='Path to the text file')
     parser.add_argument('column', type=str, help='Name of the text column')
-    parser.add_argument('--cap_ratio', type=int, default=0.5, help='Name of the text column')
+    parser.add_argument('--cap_ratio', type=float, default=0.5, help='Name of the text column')
     parser.add_argument('--save', action='store_true', help='Optionally save n-gram count')
+    parser.add_argument('--n_print', type=int, default=10, help='Number of results to print')
 
     args=parser.parse_args()
 
-    main(args.file_path, args.column,args.cap_ratio,args.save)
+    main(args.file_path, args.column,args.cap_ratio,args.save,args.n_print)
