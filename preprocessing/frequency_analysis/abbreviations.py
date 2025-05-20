@@ -48,7 +48,8 @@ def find_acronyms(text, cap_ratio_threshold=0.7):
             matches.append(match)
 
     # Tokenize and apply capital ratio rule
-    words = text.split()
+    #words = text.split()
+    words = re.findall(r"[A-Za-z\-\.]+", text)
     for word in words:
         if capital_ratio(word, threshold=cap_ratio_threshold):
             matches.append(word)
