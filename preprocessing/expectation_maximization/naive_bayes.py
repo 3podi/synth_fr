@@ -140,6 +140,47 @@ def get_mutually_exclusive_top_words(P_w_given_c, vocab, top_k=10, class_names=N
 
     return assigned_words
 
+def get_mutually_exclusive_top_words2(P_w_given_c, vocab, top_k=10, class_names=None, search_k=None):
+    """
+    Memory-efficient version: select top_k mutually exclusive words for each class.
+    
+    Args:
+        P_w_given_c: array (C, V) or sparse matrix
+        vocab: list or array of words
+        top_k: number of words to select per class
+        class_names: optional list of class names
+        search_k: how many top candidates to search from per class (default: 5 * top_k)
+    """
+    C, V = P_w_given_c.shape
+    vocab = np.asarray(vocab)
+    used_word_indices = set()
+    search_k = search_k or top_k * 5
+
+    for c in range(C):
+        name = f"Class {c}" if class_names is None else class_names[c]
+        print(f"\n📚 Top {top_k} exclusive words for {name}:")
+
+        # Get row `c` as a dense 1D array if sparse
+        row = P_w_given_c.getrow(c).toarray().ravel() if issparse(P_w_given_c) else P_w_given_c[c]
+
+        # Get top `search_k` indices efficiently
+        candidate_indices = np.argpartition(-row, search_k)[:search_k]
+        candidate_indices = candidate_indices[np.argsort(-row[candidate_indices])]
+
+        selected = []
+        for idx in candidate_indices:
+            if idx not in used_word_indices:
+                selected.append((idx, row[idx]))
+                used_word_indices.add(idx)
+            if len(selected) == top_k:
+                break
+
+        for i, (idx, prob) in enumerate(selected):
+            print(f"{i+1:>2}. {vocab[idx]:<15} (P={prob:.6f})")
+        
+        if len(selected) < top_k:
+            print(f"   ⚠ Only found {len(selected)} exclusive words.")
+
 def main(note_path, output_path, vocab_path, save_flag=False):
 
     # Limit vocab, by default to words in 25-75% percentile
@@ -150,7 +191,7 @@ def main(note_path, output_path, vocab_path, save_flag=False):
     P_w_given_c, P_c = NaiveBayes(documents=documents, labels=labels, input_vocab=vocab)
     
     print('Finished')
-    get_mutually_exclusive_top_words(P_w_given_c=P_w_given_c, vocab=vocab, top_k=20)
+    get_mutually_exclusive_top_words2(P_w_given_c=P_w_given_c, vocab=vocab, top_k=20)
     #show_top_words_per_class(P_w_given_c=P_w_given_c, vocab=vocab)
 
     if save_flag:
