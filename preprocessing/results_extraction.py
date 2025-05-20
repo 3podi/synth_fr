@@ -36,10 +36,14 @@ def main(results_folder, dictionary_path, compute_per_code_metrics=False, digits
     extractions = [f for f in os.listdir(results_folder) if f.endswith('.csv')]
 
     with open(dictionary_path, 'rb') as f:
-        corpus = pickle.load(f)
+        corpus_no_norm = pickle.load(f)
     
-    corpus = {normalize_text(k): v for k, v in corpus.items()}
-    
+    corpus = {}
+    for k, v in corpus_no_norm.items():
+        norm_k = normalize_text(k)
+        if norm_k not in corpus or v is not None:
+            corpus[norm_k] = v  
+            
     for extr in extractions:
         path = os.path.join(results_folder, extr)
         df = pd.read_csv(path)
@@ -169,11 +173,16 @@ def occurance_analysis(results_folder=None, dictionary_path=None):
     extractions = [f for f in os.listdir(results_folder) if f.endswith('.csv')]
 
     with open(dictionary_path, 'rb') as f:
-        corpus = pickle.load(f)
+        corpus_no_norm = pickle.load(f)
     
-    corpus = {normalize_text(k): v for k, v in corpus.items()}
+    corpus = {}
+    for k, v in corpus_no_norm.items():
+        norm_k = normalize_text(k)
+        if norm_k not in corpus or v is not None:
+            corpus[norm_k] = v
+            
     counter = Counter({element:0 for element in corpus.keys()})
-    dict_codes = set(corpus.values())
+    dict_codes = set([remove_symbols(v) for v in corpus.values() if v is not None])
     pred_codes = set()
     codes = set()
     total_words = 0
@@ -217,7 +226,7 @@ def occurance_analysis(results_folder=None, dictionary_path=None):
                 total_predicted_words += sum([len(expression.split()) for expression in predicted_expressions])
 
     missing_codes = codes - dict_codes
-    print('Missing codes: ', missing_codes)
+    #print('Missing codes: ', missing_codes)
     zero_codes = dict_codes - pred_codes    
     zero_elements = [element for element, count in counter.items() if count == 0]
     print(f'Number of expression in dict never matched over total expressions: {len(zero_elements)}/{len(set(corpus.keys()))}')

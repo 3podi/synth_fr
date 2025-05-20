@@ -46,15 +46,14 @@ def find_acronyms(text, cap_ratio_threshold=0.7):
         for match in re.findall(pattern, text):
             if isinstance(match, tuple):
                 match = match[0]
-            if i == len(patterns)-1:
-                print('found: ', match)
-            matches.append(match)
+            if len(match) < 6:
+                matches.append(match)
 
     # Tokenize and apply capital ratio rule
     #words = text.split()
     words = re.findall(r"[A-Za-z\-\.]+", text)
     for word in words:
-        if len(word)>1 and capital_ratio(word, threshold=cap_ratio_threshold):
+        if len(word)>1 and len(word)<6 and capital_ratio(word, threshold=cap_ratio_threshold):
             matches.append(word)
 
     return matches

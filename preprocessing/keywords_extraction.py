@@ -97,7 +97,9 @@ class KeywordsExtractor:
                         #doc = nlp(term)
                         #lemmas = [token.lemma_ for token in doc if token.is_alpha and not token.is_stop]
                         #term = ' '.join(lemmas).strip()
-                        db.insert(normalize_text(term))
+                        term_norm = normalize_text(term)
+                        if len(term_norm) > 1:
+                            db.insert(term_norm)
 
     def extract(self, text: str):
         doc = nlp(text)
