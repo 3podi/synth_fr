@@ -52,7 +52,7 @@ def WordCount(file,column,n):
 
     return counter
 
-def WordCount2(file, column, n, vocab_size=10000, vocab_path=None):
+def WordCount2(file, column, n, vocab_size=10000, vocab_path=None, useLemma=False):
     """
     Count n-grams in a CSV file with vocabulary limitation.
 
@@ -77,13 +77,18 @@ def WordCount2(file, column, n, vocab_size=10000, vocab_path=None):
             for chunk in pd.read_csv(file, chunksize=chunksize, usecols=[column]):
                 for text in chunk[column].dropna():
                     doc = nlp(text.lower())
-                    lemmas = [token.lemma_ for token in doc if token.is_alpha and not token.is_stop]
-                    word_counts.update(lemmas)
+                    if useLemma:
+                        tokens = [token.lemma_ for token in doc if token.is_alpha and not token.is_stop]
+                    else:
+                        tokens = [token for token in doc if token.is_alpha and not token.is_stop]
+                    word_counts.update(tokens)
                     pbar.update(1)
 
             print('Number of words in data: ', len(word_counts))
-            with open('../counter_1gram.pkl', 'wb') as f:
+            with open('../counter_1gram_no_lemmas.pkl', 'wb') as f:
                 pickle.dump(word_counts, f)
+            
+            return True
     
     else:
         with open(vocab_path, 'rb') as f:
@@ -100,28 +105,32 @@ def WordCount2(file, column, n, vocab_size=10000, vocab_path=None):
         for chunk in pd.read_csv(file, chunksize=chunksize, usecols=[column]):
             for text in chunk[column].dropna():
                 doc = nlp(text.lower())
-                lemmas = [token.lemma_ for token in doc if token.is_alpha and not token.is_stop and token.lemma_ in vocab]
-                ngrams = generate_ngrams(lemmas, n)
+                if useLemma:
+                    tokens = [token.lemma_ for token in doc if token.is_alpha and not token.is_stop]
+                else:
+                    tokens = [token for token in doc if token.is_alpha and not token.is_stop]
+                ngrams = generate_ngrams(tokens, n)
                 ngram_counter.update(ngrams)
                 pbar.update(1)
 
     return ngram_counter
 
 
-def main(file_path,column,n,vocab_path):
+def main(file_path,column,n,vocab_path, save_flag, lemma_flag):
 
-    counter = WordCount2(file_path,column,n,vocab_path)
+    counter = WordCount2(file_path,column,n,vocab_path,lemma_flag)
 
     print("Top 10 n-grams:")
     for k, v in counter.most_common(10):
         print(" ".join(k), ":", v)
         
     # Save
-    output_dir = Path("preprocessing/frequency_analysis/results_frequency")
-    output_dir.mkdir(parents=True, exist_ok=True)
-    output_file = output_dir / f"ngrams_{n}_counter.pkl"
-    with open(output_file, "wb") as f:
-        pickle.dump(counter, f)
+    if save_flag:
+        output_dir = Path("preprocessing/frequency_analysis/results_frequency")
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_file = output_dir / f"ngrams_{n}_counter.pkl"
+        with open(output_file, "wb") as f:
+            pickle.dump(counter, f)
 
 if __name__ == '__main__':
     
@@ -130,6 +139,8 @@ if __name__ == '__main__':
     parser.add_argument('column', type=str, help='Name of the text column')
     parser.add_argument('n', type=int, help='Integer that define what n-gram to count')
     parser.add_argument('--vocab_path', type=str, default=None, help='path to load vocab')
+    parser.add_argument('--save', action='store_true', help='Optionally save n-gram count')
+    parser.add_argument('--lemma', action='store_true', help='Optionally lemmatize words')
 
     args=parser.parse_args()
 
