@@ -86,10 +86,11 @@ def abbreviations_searcher(file, column, cap_ratio=0.5):
 def main(file_path,column,cap_ratio,save_flag,top_k):
 
     counter = abbreviations_searcher(file_path,column,cap_ratio)
-
+    
+    print('Total abbreviations found: ', len(counter))
     print("Top 10 abbreviations:")
     for k, v in counter.most_common(top_k):
-        print(" ".join(k), ":", v)
+        print(k, ":", v)
         
     # Save
     if save_flag:
