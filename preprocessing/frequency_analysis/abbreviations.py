@@ -1,7 +1,6 @@
 import pandas as pd
 import csv
 from collections import Counter
-import spacy
 import argparse
 from tqdm import tqdm
 import pickle
@@ -104,9 +103,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description= 'Setting paths and params')
     parser.add_argument('file_path', type=str, help='Path to the text file')
     parser.add_argument('column', type=str, help='Name of the text column')
-    parser.add_argument('--cap_ration', type=int, default=0.5, help='Name of the text column')
+    parser.add_argument('--cap_ratio', type=int, default=0.5, help='Name of the text column')
     parser.add_argument('--save', action='store_true', help='Optionally save n-gram count')
 
     args=parser.parse_args()
 
-    main(args.file_path, args.column, args.n, args.vocab_path)
+    main(args.file_path, args.column,args.cap_ratio,args.save)
