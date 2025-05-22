@@ -31,7 +31,7 @@ def NaiveBayes(documents, labels, input_vocab=None, batch_size=500, dtype=np.flo
     all_class_names = sorted(set(c for doc_labels in labels for c in doc_labels))
 
     class2idx = {name: i for i, name in enumerate(all_class_names)}
-    #idx2class = {i: name for name, i in class2idx.items()}
+    idx2class = {i: name for name, i in class2idx.items()}
     C = len(all_class_names)
 
     class_doc_counts = np.zeros(C, dtype=dtype)
@@ -65,7 +65,7 @@ def NaiveBayes(documents, labels, input_vocab=None, batch_size=500, dtype=np.flo
     P_w_given_c = P_w_given_c.multiply(1 / row_sums[:, None])
 
     P_c = class_doc_counts / class_doc_counts.sum()
-    return P_w_given_c, P_c
+    return P_w_given_c, P_c, idx2class
 
 def show_top_words_per_class(P_w_given_c, vocab, top_k=10, class_names=None):
     """
@@ -181,17 +181,17 @@ def get_mutually_exclusive_top_words2(P_w_given_c, vocab, top_k=10, class_names=
         if len(selected) < top_k:
             print(f"   ⚠ Only found {len(selected)} exclusive words.")
 
-def main(note_path, output_path, vocab_path, save_flag=False):
+def main(note_path, output_path, vocab_path, save_flag=False, col='input', col_codes='labels'):
 
     # Limit vocab, by default to words in 25-75% percentile
-    vocab = get_percentile_vocab(vocab_path, 25, 50)    
+    vocab = get_percentile_vocab(vocab_path, 25, 75)    
     
-    documents, labels = get_notes(note_path,labels=True)
+    documents, labels = get_notes(note_path,labels=True,column=col,column_codes=col_codes)
     
-    P_w_given_c, P_c = NaiveBayes(documents=documents, labels=labels, input_vocab=vocab)
-    
+    P_w_given_c, P_c, idx2class = NaiveBayes(documents=documents, labels=labels, input_vocab=vocab)  
     print('Finished')
-    get_mutually_exclusive_top_words2(P_w_given_c=P_w_given_c, vocab=vocab, top_k=20)
+    
+    get_mutually_exclusive_top_words2(P_w_given_c=P_w_given_c, class_names=idx2class, vocab=vocab, top_k=10)
     #show_top_words_per_class(P_w_given_c=P_w_given_c, vocab=vocab)
 
     if save_flag:
@@ -204,12 +204,16 @@ if __name__ == '__main__':
     parser.add_argument('output_file_path', type=str, help='Path to folder where to store the results')
     parser.add_argument('--vocab_path', type=str, default=None, help='Path to 1-gram counter')
     parser.add_argument('--save', action='store_true', help='Optionally save P(w|c)')
-    
+    parser.add_argument('--column', type=str, default='input', help='Column name in the csv for text')
+    parser.add_argument('--column_codes', type=str, default='labels', help='Column name in the csv for codes')
+
     args = parser.parse_args()
     
     note_path = args.note_path
     output_path = args.output_file_path
     vocab_path = args.vocab_path
     save_flag = args.save
+    column = args.column
+    column_codes = args.column_codes
     
-    main(note_path=note_path, output_path=output_path, vocab_path=vocab_path, save_flag=save_flag)
+    main(note_path=note_path, output_path=output_path, vocab_path=vocab_path, save_flag=save_flag, col=column, col_codes=column_codes)

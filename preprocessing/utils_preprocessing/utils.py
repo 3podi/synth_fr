@@ -67,7 +67,7 @@ def normalize_text(text):
     
     return re.sub(r'\s+', ' ', text).strip()
 
-def get_notes(file_path,column='input', labels=False):
+def get_notes(file_path,column='input', column_codes='labels', labels=False):
     """
     Read a CSV file and return a list of all texts from the 'text' column.
 
@@ -91,10 +91,10 @@ def get_notes(file_path,column='input', labels=False):
         for row in reader:
             texts.append(normalize_text(row[column].replace('\n', ' ')))
             if labels:
-                true_codes = row['labels'].strip().split()
+                true_codes = row[column_codes].strip().split()
                 true_codes = [remove_symbols(code) for code in true_codes]
                 codes.append(true_codes)
-
+        print('Documents loaded')
 
     if labels:
         return texts, codes

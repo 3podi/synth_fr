@@ -3,6 +3,7 @@ import argparse
 from sklearn.feature_extraction.text import CountVectorizer
 from tqdm import tqdm
 from scipy.sparse import csr_matrix
+from scipy.sparse import issparse
 
 
 import sys
@@ -78,6 +79,47 @@ def ExpectationMaximization(documents, num_classes, input_vocab=None):
     
     return P_w_given_c
 
+def get_mutually_exclusive_top_words2(P_w_given_c, vocab, top_k=10, class_names=None, search_k=None):
+    """
+    Memory-efficient version: select top_k mutually exclusive words for each class.
+    
+    Args:
+        P_w_given_c: array (C, V) or sparse matrix
+        vocab: list or array of words
+        top_k: number of words to select per class
+        class_names: optional list of class names
+        search_k: how many top candidates to search from per class (default: 5 * top_k)
+    """
+    C, V = P_w_given_c.shape
+    vocab = np.asarray(list(vocab))
+    used_word_indices = set()
+    search_k = search_k or top_k * 5
+
+    for c in range(C):
+        name = f"Class {c}" if class_names is None else class_names[c]
+        print(f"\n📚 Top {top_k} exclusive words for {name}:")
+
+        # Get row `c` as a dense 1D array if sparse
+        row = P_w_given_c.getrow(c).toarray().ravel() if issparse(P_w_given_c) else P_w_given_c[c]
+
+        # Get top `search_k` indices efficiently
+        candidate_indices = np.argpartition(-row, search_k)[:search_k]
+        candidate_indices = candidate_indices[np.argsort(-row[candidate_indices])]
+
+        selected = []
+        for idx in candidate_indices:
+            if idx not in used_word_indices:
+                selected.append((idx, row[idx]))
+                used_word_indices.add(idx)
+            if len(selected) == top_k:
+                break
+
+        for i, (idx, prob) in enumerate(selected):
+            print(f"{i+1:>2}. {vocab[idx]:<15} (P={prob:.6f})")
+        
+        if len(selected) < top_k:
+            print(f"   ⚠ Only found {len(selected)} exclusive words.")
+
 def ExpectationMaximization2(documents, num_classes, input_vocab=None):
     
     # Vectorize using fixed vocabulary
@@ -118,7 +160,7 @@ def ExpectationMaximization2(documents, num_classes, input_vocab=None):
         for idx in top_indices:
             print(f"  {vocab[idx]:<10} -> P(w|c) = {P_w_given_c[c][idx]:.3f}")
 
-def ExpectationMaximization3(documents, num_classes, input_vocab=None, iters=10, batch_size=10000, dtype=np.float32):
+def ExpectationMaximization3(documents, num_classes, input_vocab=None, iters=10, batch_size=10000, dtype=np.float32, tol=1e-9):
     """
     Run EM algorithm to find P(w | c) and P(c) using batching and sparse matrix.
     
@@ -161,6 +203,9 @@ def ExpectationMaximization3(documents, num_classes, input_vocab=None, iters=10,
     P_w_given_c = np.random.rand(C, V).astype(dtype)
     P_w_given_c /= P_w_given_c.sum(axis=1, keepdims=True)
 
+    prev_P_w_given_c = P_w_given_c.copy()
+    prev_P_c = P_c.copy()
+
     for it in range(max_iter):
         expected_counts = np.zeros((C, V), dtype=dtype)
         class_totals = np.zeros(C, dtype=dtype)
@@ -185,6 +230,19 @@ def ExpectationMaximization3(documents, num_classes, input_vocab=None, iters=10,
         # M-step
         P_w_given_c = expected_counts / expected_counts.sum(axis=1, keepdims=True)
         P_c = class_totals / D
+        
+        # Check for convergence (change in P_w_given_c and P_c)
+        change_in_P_w_given_c = np.linalg.norm(P_w_given_c - prev_P_w_given_c)
+        change_in_P_c = np.linalg.norm(P_c - prev_P_c)
+
+        print(f"Iteration {it+1}: Change in P(w|c): {change_in_P_w_given_c:.9f}, Change in P(c): {change_in_P_c:.9f}")
+
+        if change_in_P_w_given_c < tol and change_in_P_c < tol:
+            print(f"Converged at iteration {it+1} due to small change in parameters.")
+            break
+
+        prev_P_w_given_c = P_w_given_c.copy()
+        prev_P_c = P_c.copy()
 
     # ---------- Output ----------
     #top_k = 5
@@ -206,7 +264,8 @@ def main(note_path, output_path, vocab_path, num_classes=23, iters=10, save_flag
     
     P_w_given_c, P_c = ExpectationMaximization3(documents=documents,num_classes=num_classes, iters=iters, input_vocab=vocab)
 
-    show_top_words_per_class(P_w_given_c=P_w_given_c, vocab=vocab)
+    get_mutually_exclusive_top_words2(P_w_given_c=P_w_given_c, vocab=vocab, top_k=10)
+    #show_top_words_per_class(P_w_given_c=P_w_given_c, vocab=vocab)
 
     if save_flag:
         np.save(f'{output_path}em_output.npy', P_w_given_c)
