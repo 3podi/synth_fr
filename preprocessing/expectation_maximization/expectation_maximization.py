@@ -257,9 +257,8 @@ def ExpectationMaximization3(documents, num_classes, input_vocab=None, iters=10,
 
 def main(note_path, output_path, vocab_path, num_classes=23, iters=10, save_flag=False):
 
-    # Limit vocab, by default to words in 25-75% percentile
+    # Limit vocab, by default to words in 85-99.5% percentile
     vocab = get_percentile_vocab(vocab_path)    
-    
     documents = get_notes(note_path)
     
     P_w_given_c, P_c = ExpectationMaximization3(documents=documents,num_classes=num_classes, iters=iters, input_vocab=vocab)

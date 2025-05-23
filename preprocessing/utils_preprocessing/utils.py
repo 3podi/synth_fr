@@ -7,14 +7,15 @@ import string
 import csv
 import pickle
 import numpy as np
+from collections import Counter
 
 french_stopwords = set([
-    "alors", "au", "aucuns", "aussi", "autre", "avant", "avec", "avoir", "bon", "car", "ce", "cela", "ces", "ceux", "chaque", "ci", "comme", "comment", "dans", "des", "du", "dedans", "dehors", "depuis", "devrait", "doit", "donc", "dos", "droite", "début", "elle", "elles", "en", "encore", "essai", "est", "et", "eu", "fait", "faites", "fois", "font", "force", "haut", "hors", "ici", "il", "ils", "je", "juste", "la", "le", "les", "leur", "là", "ma", "maintenant", "mais", "mes", "mine", "moins", "mon", "mot", "même", "ni", "nommés", "notre", "nous", "nouveaux", "ou", "où", "par", "parce", "parole", "pas", "personnes", "peut", "peu", "pièce", "plupart", "pour", "pourquoi", "quand", "que", "quel", "quelle", "quelles", "quels", "qui", "sa", "sans", "ses", "seulement", "si", "sien", "son", "sont", "sous", "soyez", "sujet", "sur", "ta", "tandis", "tellement", "tels", "tes", "ton", "tous", "tout", "trop", "très", "tu", "voient", "vont", "votre", "vous", "vu", "ça", "étaient", "état", "étions", "été", "être"
+    "alors", "au", "aucuns", "aussi", "autre", "avant", "avec", "avoir", "bon", "car", "ce", "cela", "ces", "ceux", "chaque", "ci", "comme", "comment", "dans", "des", "du", "dedans", "dehors", "depuis", "devrait", "doit", "donc", "dos", "droite", "début", "elle", "elles", "en", "encore", "essai", "est", "et", "eu", "fait", "faites", "fois", "font", "force", "haut", "hors", "ici", "il", "ils", "je", "juste", "la", "le", "les", "leur", "là", "ma", "maintenant", "mais", "mes", "mine", "moins", "mon", "mot", "même", "ni", "nommés", "notre", "nous", "nouveaux", "ou", "où", "par", "parce", "parole", "pas", "personnes", "peut", "peu", "pièce", "plupart", "pour", "pourquoi", "quand", "que", "quel", "quelle", "quelles", "quels", "qui", "sa", "sans", "ses", "seulement", "si", "sien", "son", "sont", "sous", "soyez", "sujet", "sur", "ta", "tandis", "tellement", "tels", "tes", "ton", "tous", "tout", "trop", "très", "tu", "voient", "vont", "votre", "vous", "vu", "ça", "étaient", "état", "étions", "été", "être", "mmol","mol","nmol"
 ])
 
 import spacy
 nlp = spacy.load("fr_core_news_sm")
-french_stopwords = set(nlp.Defaults.stop_words)
+french_stopwords = set(nlp.Defaults.stop_words).union(french_stopwords)
 del nlp
 
 def remove_symbols(text):
@@ -101,14 +102,14 @@ def get_notes(file_path,column='input', column_codes='labels', labels=False):
     else:
         return texts
 
-def get_percentile_vocab(vocab_path, lower_percentile=50, upper_percentile=80):
+def get_percentile_vocab(vocab_path, lower_percentile=85, upper_percentile=99.5):
     """
     Get vocabulary of words in the specified percentile range of occurrence distribution.
 
     Args:
         vocab_path (str): Path to the pickle file containing word counts
-        lower_percentile (int): Lower bound percentile (default: 25)
-        upper_percentile (int): Upper bound percentile (default: 75)
+        lower_percentile (int): Lower bound percentile (default: 85)
+        upper_percentile (int): Upper bound percentile (default: 99.5)
 
     Returns:
         set: Vocabulary of words in the specified percentile range
@@ -119,11 +120,16 @@ def get_percentile_vocab(vocab_path, lower_percentile=50, upper_percentile=80):
         word_counts = pickle.load(f)
     
     # Get all counts and sort them
-    counts = [count for word, count in word_counts.most_common()]
-
+    if isinstance(word_counts, Counter):
+        counts = [count for word, count in word_counts.most_common()]
+    else:
+        counts = list(word_counts.values())
+        
     # Calculate percentiles
     lower_threshold = np.percentile(counts, lower_percentile)
     upper_threshold = np.percentile(counts, upper_percentile)
+
+    print(f'Lower and upper bound voca: {lower_threshold} - {upper_threshold}')
     
     stops = {normalize_text(stop) for stop in french_stopwords}
     
@@ -133,7 +139,16 @@ def get_percentile_vocab(vocab_path, lower_percentile=50, upper_percentile=80):
         if lower_threshold <= count <= upper_threshold
         if normalize_text(word) not in stops and len(normalize_text(word)) > 2
     }
-
+          
+    #for word, count in word_counts.items():
+    #    norm_word = normalize_text(word)
+    #    if norm_word == 'mmol':
+    #        print(f"Original: {word}, Normalized: {norm_word}, Count: {count}")
+    #        print(f"In range: {lower_threshold <= count <= upper_threshold}")
+    #        print(f"In stops: {norm_word in stops}")
+    #        print(f"Length > 2: {len(norm_word) > 2}")
+            
+    print('Len vocab: ', len(percentile_vocab))
     return percentile_vocab
 
 if __name__ == "__main__":
