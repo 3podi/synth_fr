@@ -82,17 +82,26 @@ def main(results_folder, dictionary_path, compute_per_code_metrics=False, digits
             # Handle case with no predictions
             if digits:
                 predicted_codes = [
-                    remove_symbols(corpus[match])[:1+digits]
+                    remove_symbols(v)[:1+digits]
                     for match in predicted_expressions
-                    if corpus[match]
+                    for v in (corpus[normalize_text(match)] if isinstance(corpus[normalize_text(match)], list) else [corpus[normalize_text(match)]])
+                    if normalize_text(match) in corpus
                 ]
             else:
                 
+                #for match in predicted_expressions:
+                #    if isinstance(corpus[normalize_text(match)], list):
+                #        for v in corpus[normalize_text(match)]:
+                #            print(v)
+                #    else:
+                #        print(corpus[normalize_text(match)])
                               
                 predicted_codes = [
-                    remove_symbols(corpus[match])
+                    remove_symbols(v)
                     for match in predicted_expressions
-                    if corpus[normalize_text(match)]
+                    if normalize_text(match) in corpus
+                    for v in (corpus[normalize_text(match)] if isinstance(corpus[normalize_text(match)], list) else [corpus[normalize_text(match)]])
+                    if v is not None
                 ]
 
             # Per-code metrics
@@ -182,7 +191,11 @@ def occurance_analysis(results_folder=None, dictionary_path=None):
             corpus[norm_k] = v
             
     counter = Counter({element:0 for element in corpus.keys()})
-    dict_codes = set([remove_symbols(v) for v in corpus.values() if v is not None])
+    dict_codes = set(
+        remove_symbols(v)
+        for value in corpus.values() if value is not None
+        for v in (value if isinstance(value, list) else [value])
+    )
     pred_codes = set()
     codes = set()
     total_words = 0
@@ -211,10 +224,12 @@ def occurance_analysis(results_folder=None, dictionary_path=None):
                 true_codes = []
 
             predicted_codes = [
-                    remove_symbols(corpus[match])
-                    for match in predicted_expressions
-                    if match in corpus and corpus[match]
-                ]
+                remove_symbols(v)
+                for match in predicted_expressions
+                if normalize_text(match) in corpus
+                for v in (corpus[normalize_text(match)] if isinstance(corpus[normalize_text(match)], list) else [corpus[normalize_text(match)]])
+                if v is not None
+            ]
             
             pred_codes.update(predicted_codes)
             codes.update(true_codes)
@@ -233,7 +248,8 @@ def occurance_analysis(results_folder=None, dictionary_path=None):
     print(f'Number of codes never matched (several unmatched expressions can have same code) over total codes in dict: {len(zero_codes)}/{len(dict_codes)}')
     print(f'Number of codes not available in my dict but present in the data over total codes in data {len(missing_codes)}/{len(codes)}')
     print(f'Number codes not present in the data: {len(dict_codes-codes)}')
-
+    
+    print(f'Percentage unique predicted codes over unique data codes: {len(pred_codes)/len(codes)}')
     print('Percentage extacted words: ', total_predicted_words/total_words * 100)
 
     
@@ -243,6 +259,8 @@ def total_metrics_plot(results_folder):
     files = [f for f in os.listdir(metrics_path) if f.endswith('_metrics.csv')]
 
     records = []
+    records_precision = []
+    records_recall = []
 
     for file in files:
         try:
@@ -253,15 +271,20 @@ def total_metrics_plot(results_folder):
             continue
 
         df = pd.read_csv(os.path.join(metrics_path, file))
-        tp = df['TP'].sum()
-        fp = df['FP'].sum()
-        fn = df['FN'].sum()
+        tp = sum(df['TP'].tolist())
+        fp = sum(df['FP'].tolist())
+        fn = sum(df['FN'].tolist())
 
         precision, recall, f1 = compute_metrics(tp, fp, fn)
+        print(f'file: {file}, recall: {recall}')
         records.append((param1, param2, f1))
+        records_precision.append((param1, param2, precision))
+        records_recall.append((param1, param2, recall))
 
     # Convert to DataFrame for plotting
     results_df = pd.DataFrame(records, columns=['param1', 'param2', 'f1'])
+    results_precision_df = pd.DataFrame(records_precision, columns=['param1', 'param2', 'precision'])
+    results_recall_df = pd.DataFrame(records_recall, columns=['param1', 'param2', 'recall'])
 
     # Create the line plot
     plt.figure(figsize=(8, 6))
@@ -281,6 +304,43 @@ def total_metrics_plot(results_folder):
     plt.savefig(save_path)
     print(f"Plot saved to: {save_path}")
 
+    # Create the line plot
+    plt.figure(figsize=(8, 6))
+    for param2_val in sorted(results_precision_df['param2'].unique()):
+        subset = results_precision_df[results_precision_df['param2'] == param2_val].sort_values('param1')
+        plt.plot(subset['param1'], subset['precision'], marker='o', label=f'param2 = {param2_val}')
+
+    plt.xlabel("Similarity threshold")
+    plt.ylabel("Precision Score")
+    plt.title("Precision Score vs Similarity threshold")
+    plt.legend(title="Max window")
+    plt.grid(True)
+    plt.tight_layout()
+
+    # Save plot
+    save_path = os.path.join(results_folder, "precision_vs_param1_by_param2.png")
+    plt.savefig(save_path)
+    print(f"Plot saved to: {save_path}")
+    
+    
+    # Create the line plot
+    plt.figure(figsize=(8, 6))
+    for param2_val in sorted(results_recall_df['param2'].unique()):
+        subset = results_recall_df[results_recall_df['param2'] == param2_val].sort_values('param1')
+        plt.plot(subset['param1'], subset['recall'], marker='o', label=f'param2 = {param2_val}')
+
+    plt.xlabel("Similarity threshold")
+    plt.ylabel("Recall Score")
+    plt.title("Recall Score vs Similarity threshold")
+    plt.legend(title="Max window")
+    plt.grid(True)
+    plt.tight_layout()
+
+    # Save plot
+    save_path = os.path.join(results_folder, "recall_vs_param1_by_param2.png")
+    plt.savefig(save_path)
+    print(f"Plot saved to: {save_path}")
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Evaluate predictions')
@@ -293,6 +353,7 @@ if __name__ == '__main__':
 
     if not args.total_metrics_only:
         main(results_folder=args.results_folder, dictionary_path=args.dictionary_path, compute_per_code_metrics=args.per_code_metrics, digits=args.digits)
+        #total_metrics_plot(results_folder=args.results_folder)
     else:
         total_metrics(results_folder=args.results_folder)
         occurance_analysis(results_folder=args.results_folder, dictionary_path=args.dictionary_path)

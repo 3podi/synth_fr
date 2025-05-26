@@ -7,6 +7,7 @@ import csv
 from tqdm import tqdm
 import pandas as pd
 from collections import defaultdict
+import pickle
 
 # Add the current working directory (project root) to sys.path
 sys.path.insert(0, os.getcwd())
@@ -214,7 +215,7 @@ def get_mutually_exclusive_top_words2(P_w_given_c, vocab, top_k=10, class_names=
 def main(note_path, output_path, vocab_path, save_flag=False, col='input', col_codes='labels',chunk_size=500):
 
     # Limit vocab, by default to words in 25-75% percentile
-    vocab = get_percentile_vocab(vocab_path, 25, 75)    
+    vocab = get_percentile_vocab(vocab_path, 85, 99.5)    
         
     P_w_given_c, P_c, idx2class = NaiveBayesCSV(csv_path=note_path,
                                                 text_column=col,
@@ -224,21 +225,21 @@ def main(note_path, output_path, vocab_path, save_flag=False, col='input', col_c
     print('Finished')
     
     #get_mutually_exclusive_top_words2(P_w_given_c=P_w_given_c, class_names=idx2class, vocab=vocab, top_k=10)
-    show_top_words_per_class(P_w_given_c=P_w_given_c, vocab=vocab)
+    #show_top_words_per_class(P_w_given_c=P_w_given_c, vocab=vocab)
 
     if save_flag:
         # Save conditional probabilities
-        np.save(f'{output_path}naive_bayes_all_Pwc_output.npy', P_w_given_c)
+        np.save(f'{output_path}/naive_bayes_all_Pwc_output.npy', P_w_given_c)
 
         # Save class priors
-        np.save(f'{output_path}naive_bayes_all_Pc_output.npy', P_c)
+        np.save(f'{output_path}/naive_bayes_all_Pc_output.npy', P_c)
 
         # Save vocabulary
-        with open(f'{output_path}naive_bayes_all_vocab.pkl', 'wb') as f:
+        with open(f'{output_path}/naive_bayes_all_vocab.pkl', 'wb') as f:
             pickle.dump(vocab, f)
 
         # Save index-to-class mapping
-        with open(f'{output_path}naive_bayes_all_idx2class.pkl', 'wb') as f:
+        with open(f'{output_path}/naive_bayes_all_idx2class.pkl', 'wb') as f:
             pickle.dump(idx2class, f)
             
 if __name__ == '__main__':

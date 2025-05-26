@@ -41,34 +41,6 @@ def process_line(row):
     
     # Construct new row
     return row[:-2] + [keywords, row[-1]]
-    
-def process_line_normalize(row):
-    """Remove negated sentences, normalize text, and extract keywords."""
-    # Step 1: Replace newlines and parse original text (not normalized yet)
-    try:
-
-        raw_text = row[-2].replace('\n', ' ')
-        doc = nlp(raw_text)
-        
-        # Step 2: Filter out sentences containing negation
-        non_negated_text = ' '.join(sent.text for sent in doc.sents if not contains_negation(sent))
-
-        doc = nlp(non_negated_text)
-        # Step 3: Extract lemmatized tokens
-        lemmas = [token.lemma_ for token in doc if token.is_alpha and not token.is_stop]
-        lemmas = ' '.join(lemmas).strip()
-
-        # Step 4: Normalize the filtered text
-        normalized_text = normalize_text(lemmas)
-
-        # Step 5: Extract keywords
-        keywords = [match['match'] for match in extractor.extract(normalized_text)]
-
-        # Step 6: Return updated row with keywords and last original column
-        return row[:-2] + [keywords, row[-1]]
-    except Exception as e:
-        print(f"[ERROR] Failed processing row: {row[:2]}, Error: {e}")
-        return row[:-2] + [[], row[-1]]  # return empty keywords
 
 def count_lines_in_csv(file_path):
     """Count the number of lines in a CSV file efficiently"""

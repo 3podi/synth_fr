@@ -23,4 +23,4 @@ pip --version
 
 # export PYTHONPATH="$PWD"
 
-python preprocessing/expectation_maximization/naive_bayes_csv.py ../../data/crh_omop_2024/all/train.csv ../classic_ml --vocab_path ../counter_1gram.pkl --column_text text --column_codes codes --chunk_size 1000 --save
+python preprocessing/expectation_maximization/naive_bayes_csv.py ../../data/crh_omop_2024/all/train.csv ../classic_ml --vocab_path ../word_counts/counter_full_vocab_lemmas_False.pkl --column_text text --column_codes codes --chunk_size 1000 --save
