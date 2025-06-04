@@ -200,7 +200,7 @@ class NGramModel:
                     _, text = parts
                     texts.append(text)
         
-        completed_texts = self.n_gram_model.complete_unfinished_words(texts)
+        completed_texts = self.complete_unfinished_words(texts)
         return completed_texts
     
     def decode_and_save(self, seqs, n):
