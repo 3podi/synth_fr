@@ -174,6 +174,7 @@ class NGramModel:
 
                 context_tokens.append(next_token)
                 text = self.detokenize(context_tokens)
+                print(text)
                 words = text.split()
                 last_word = words[-1] if words else ''
 
