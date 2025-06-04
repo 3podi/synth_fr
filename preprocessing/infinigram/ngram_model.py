@@ -106,7 +106,7 @@ class NGramModel:
             new_beam.sort(key=lambda x: x[1], reverse=True)
             beam = new_beam[:self.beam_size]
             
-            self.decode_and_save(self.save_path, length)
+            self.decode_and_save(self.save_path, beam, length)
 
 
     def initialize_beam_no_subwords(self):
