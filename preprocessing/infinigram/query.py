@@ -9,7 +9,7 @@ engine = InfiniGramEngine(index_dir='/export/home/cse170020/Riccardo_T/word_coun
 
 print('Vocab size: ', tokenizer.vocab_size)
 
-input_ids = tokenizer.encode('requires physiotherapy in')
+input_ids = tokenizer.encode('molto sophie mooren')
 print(input_ids)
 count = engine.count(input_ids=input_ids)
 print('Resulting count: ', count)
@@ -17,8 +17,8 @@ print('Resulting count: ', count)
 input_ids = tokenizer.encode('oui')
 print(input_ids)
 count = engine.ntd(prompt_ids=input_ids)['result_by_token_id']
-print(count)
+#print(count)
 
-for k in count.keys():
-    print(f'ID: {k} - str: {tokenizer._convert_id_to_token(k)} - prob: {count[k]['prob']}')
+#for k in count.keys():
+#    print(f'ID: {k} - str: {tokenizer._convert_id_to_token(k)} - prob: {count[k]['prob']}')
     

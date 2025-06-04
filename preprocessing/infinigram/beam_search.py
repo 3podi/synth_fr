@@ -168,7 +168,7 @@ def top_k_ngrams(engine, tokenizer, max_len, beam_size):
             #print('Printing sea: ', seq)
             #tok_seq = [tokenizer._convert_id_to_token(idx) for idx in seq]
             #print('print token: ', tok_seq)
-
+            
             top_next = to_token_prob_topk(engine.ntd(prompt_ids=seq), top_k=20)
             #top_next = sample_token_probs(engine.ntd(prompt_ids=seq), top_k=beam_size*5, sample_k=beam_size, temperature=1.3)
             
@@ -199,6 +199,9 @@ def top_k_ngrams(engine, tokenizer, max_len, beam_size):
                 new_seq = seq + [token]
                 new_logp = log_p + math.log(prob)
                 if length==1 and new_logp == 0.0:
+                    continue
+                count = engine.count(input_ids=new_seq)
+                if count['count']>50000 or count['count']<500:
                     continue
                 new_beam.append((new_seq, new_logp))
 
