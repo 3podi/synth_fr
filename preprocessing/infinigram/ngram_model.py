@@ -241,7 +241,7 @@ def main(args):
     files = os.listdir(args.save_path)
     files = [f for f in files if f.startswith('tokens')]
 
-    for f in files:
+    for f in tqdm(files):
         file_path = os.path.join(args.save_path,f)
         completed_texts = n_gram_model.postprocess_with_completion(file_path)
         save_completed_texts(completed_texts, os.path.join(args.save_path,f'completed_{f}'))
