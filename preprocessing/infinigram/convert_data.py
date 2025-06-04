@@ -2,6 +2,38 @@ import pandas as pd
 import json
 import argparse
 from pathlib import Path
+import re
+import unicodedata
+import string
+
+def remove_accents(text):
+    """Remove accents and special characters from Unicode text."""
+    return unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore').decode('utf-8')
+
+def normalize_text(text):
+
+    # Normalize common Unicode dashes to hyphen
+    text = text.replace('\u2013', '-').replace('\u2014', '-').replace('\u2212', '-')   
+
+    # Replace hyphens with spaces
+    text = text.replace('-', ' ')
+    
+    # Remove accents
+    text = remove_accents(text)
+    
+    # Remove invisible/non-printable characters
+    text = ''.join(c for c in text if c.isprintable())
+    
+    # Remove numbers
+    text = re.sub(r'\d+', '', text)
+
+    # Replace all punctuation with whitespace
+    text = re.sub(f"[{re.escape(string.punctuation)}]", " ", text)
+    
+    # Lowercase
+    text = text.lower()
+    
+    return re.sub(r'\s+', ' ', text).strip()
 
 def csv_to_jsonl(input_csv, output_jsonl, text_column="text", chunksize=10000):
     output_path = Path(output_jsonl)
@@ -16,7 +48,7 @@ def csv_to_jsonl(input_csv, output_jsonl, text_column="text", chunksize=10000):
 
                 row_dict = row.to_dict()
                 text_value = row_dict.pop(text_column)
-                text_value = text_value.lower().replace('\n', ' ')
+                text_value = normalize_text(text_value.replace('\n', ' '))
                 
                 json_obj = {
                     "text": text_value,
