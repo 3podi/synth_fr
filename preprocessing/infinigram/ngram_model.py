@@ -236,7 +236,7 @@ def main(args):
                     vocab_path=args.vocab_path   
                     )
     
-    n_gram_model.beam_search()
+    #n_gram_model.beam_search()
 
     files = os.listdir(args.save_path)
     files = [f for f in files if f.startswith('tokens')]
