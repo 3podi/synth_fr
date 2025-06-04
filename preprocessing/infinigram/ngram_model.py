@@ -74,7 +74,7 @@ class NGramModel:
             if isinstance(word_counts, Counter):
                 self.vocab = set([normalize_text(word) for word, count in word_counts if len(normalize_text(word))>2])
             else:
-                self.vocab = list(word_counts.values())
+                self.vocab = set([normalize_text(w) for w, count in word_counts.items() if count>1 and len(normalize_text(w))>2])
         
         self.save_path = save_path
 
@@ -174,7 +174,6 @@ class NGramModel:
 
                 context_tokens.append(next_token)
                 text = self.detokenize(context_tokens)
-                print(text)
                 words = text.split()
                 last_word = words[-1] if words else ''
 
