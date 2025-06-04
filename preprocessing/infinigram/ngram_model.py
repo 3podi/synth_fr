@@ -49,6 +49,8 @@ class NGramModel:
                  top_k,
                  lower_limit_count,
                  upper_limit_count,
+                 logp_cutoff,
+                 logp_cutoff_iter,
                  vocab_path=None):
         
         self.tokenizer = AutoTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf', token=os.environ.get('HF_TOKEN'), use_fast=False, add_bos_token=False, add_eos_token=False)
@@ -60,6 +62,8 @@ class NGramModel:
         self.top_k=top_k
         self.lower_limit_count=lower_limit_count
         self.upper_limit_count=upper_limit_count
+        self.logp_cutoff=logp_cutoff
+        self.logp_cutoff_iter=logp_cutoff_iter
 
         # Add vocabulary for vab based generation completion
         if vocab_path:
@@ -68,7 +72,7 @@ class NGramModel:
             
             # Get all counts and sort them
             if isinstance(word_counts, Counter):
-                self.vocab = set([normalize_text(word) for word, count in word_counts])
+                self.vocab = set([normalize_text(word) for word, count in word_counts if len(normalize_text(word))>2])
             else:
                 self.vocab = list(word_counts.values())
         
@@ -94,15 +98,14 @@ class NGramModel:
                     count = self.engine.count(input_ids=new_seq)
                     if count['count']>self.upper_limit_count or count['count']<self.lower_limit_count:
                         continue
+                    if length>self.logp_cutoff_iter and new_logp>self.logp_cutoff:
+                        continue
                     new_beam.append((new_seq, new_logp))
 
             # Prune to top beam_size
             new_beam.sort(key=lambda x: x[1], reverse=True)
             beam = new_beam[:self.beam_size]
             
-            #if self.vocab:
-            #    beam = self.complete_unfinished_words(beam)
-
             self.decode_and_save(self.save_beam_path, length)
 
 
@@ -226,8 +229,10 @@ def main(args):
                     max_len=args.n,
                     beam_size=args.beam_size,
                     top_k=args.top_k,
-                    lower_limit_count=100,
-                    upper_limit_count=1000,
+                    lower_limit_count=500,
+                    upper_limit_count=5000,
+                    logp_cutoff=args.logp_cutoff,
+                    logp_cutoff_iter=args.logp_cutoff_iter,
                     vocab_path=args.vocab_path   
                     )
     
@@ -246,11 +251,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Beam search to find the most common n-grams.")
     parser.add_argument("index_folder", help="Path to folder with the infinigram indexing")
     parser.add_argument("save_path", help="Path to folder where to save retrivied expression")
-    parser.add_argument("output_folder", help="Path to output n-grams")
     parser.add_argument("n", type=int, help="N-grams size")
     parser.add_argument("--beam_size", type=int, default=1000, help="Size of the beam")
     parser.add_argument("--top_k", type=int, default=20, help="Top k results to keep for each next token distribution")
-    parser.add_argument("vocab_path", type=str, default=None, help="Path to vocab")
+    parser.add_argument("--vocab_path", type=str, default=None, help="Path to vocab")
+    parser.add_argument("--logp_cutoff", type=float, default=-1.1, help="After x iterations apply a cutoff in logp")
+    parser.add_argument("--logp_cutoff_iter", type=int, default=2, help="After how many iterations apply a logp_cutoff")
+
 
     args = parser.parse_args()
 
