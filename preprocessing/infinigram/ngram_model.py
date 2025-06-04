@@ -125,7 +125,7 @@ class NGramModel:
     
     def next_token_distribution(self, seq):
 
-        token_results = self.engine(prompt_ids=seq)['result_by_token_id']
+        token_results = self.engine.ntd(prompt_ids=seq)['result_by_token_id']
         sorted_probs = sorted(
             ((int(k), v['prob']) for k, v in token_results.items()),
             key=lambda x: x[1],
