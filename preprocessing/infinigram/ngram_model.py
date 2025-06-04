@@ -171,6 +171,9 @@ class NGramModel:
         """
         Decodes a list of token ID sequences and saves the resulting text lines to a file.
         """
+
+        os.makedirs(self.save_path, exist_ok=True)  # Ensure the directory exists
+
         with open(f'{self.save_path}/tokens_{n}_beam_size_{self.beam_size}.tsv', 'w', encoding='utf-8') as f:
             for ids_seq, log_p in seqs:
                 text = self.detokenize(ids_seq).strip()
