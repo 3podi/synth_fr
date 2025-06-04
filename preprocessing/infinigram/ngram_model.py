@@ -7,6 +7,39 @@ from collections import Counter
 import pickle
 import argparse
 
+import re
+import unicodedata
+import string
+
+def remove_accents(text):
+    """Remove accents and special characters from Unicode text."""
+    return unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore').decode('utf-8')
+
+def normalize_text(text):
+
+    # Normalize common Unicode dashes to hyphen
+    text = text.replace('\u2013', '-').replace('\u2014', '-').replace('\u2212', '-')   
+
+    # Replace hyphens with spaces
+    text = text.replace('-', ' ')
+    
+    # Remove accents
+    text = remove_accents(text)
+    
+    # Remove invisible/non-printable characters
+    text = ''.join(c for c in text if c.isprintable())
+    
+    # Remove numbers
+    text = re.sub(r'\d+', '', text)
+
+    # Replace all punctuation with whitespace
+    text = re.sub(f"[{re.escape(string.punctuation)}]", " ", text)
+    
+    # Lowercase
+    text = text.lower()
+    
+    return re.sub(r'\s+', ' ', text).strip()
+
 class NGramModel:
     def __init__(self, 
                  index_folder_path,
@@ -35,7 +68,7 @@ class NGramModel:
             
             # Get all counts and sort them
             if isinstance(word_counts, Counter):
-                self.vocab = set([word for word, count in word_counts])
+                self.vocab = set([normalize_text(word) for word, count in word_counts])
             else:
                 self.vocab = list(word_counts.values())
         
