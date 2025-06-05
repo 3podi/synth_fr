@@ -31,6 +31,7 @@ def main(args):
     
     if args.print:
         print('Number of filtered expressions: ', len(texts)-len(filtered_expressions))
+        print('Number remaining expressions: ', len(filtered_expressions))
         print('Remaining expressions: ', filtered_expressions)
 
 if __name__ == '__main__':
