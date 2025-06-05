@@ -2,6 +2,7 @@ from keywords_extraction import KeywordsExtractor
 import argparse
 import pickle
 import os
+from tqdm import tqdm
 
 def main(args):
 
@@ -17,7 +18,7 @@ def main(args):
     extractor = KeywordsExtractor(text_path=None, list_definitions=definitions, threshold=args.threshold)
     filtered_expressions = []
 
-    for text in texts:
+    for text in tqdm(texts):
         candidates = extractor.reader.retrieve(text)        
         if len(candidates) > 0:
             filtered_expressions.append(text)
