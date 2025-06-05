@@ -9,6 +9,10 @@ engine = InfiniGramEngine(index_dir='/export/home/cse170020/Riccardo_T/word_coun
 
 print('Vocab size: ', tokenizer.vocab_size)
 
+input_ids = tokenizer(['ciao sono enrico', 'cio sono riccardo'],padding=False)['input_ids']
+print(input_ids)
+print(tokenizer.batch_decode(input_ids))
+
 input_ids = tokenizer.encode('molto sophie mooren')
 print(input_ids)
 count = engine.count(input_ids=input_ids)

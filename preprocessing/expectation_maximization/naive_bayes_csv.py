@@ -228,6 +228,9 @@ def main(note_path, output_path, vocab_path, save_flag=False, col='input', col_c
     #show_top_words_per_class(P_w_given_c=P_w_given_c, vocab=vocab)
 
     if save_flag:
+        
+        os.makedirs(output_path, exist_ok=True)  # Ensure the directory exists
+
         # Save conditional probabilities
         np.save(f'{output_path}/naive_bayes_all_Pwc_output.npy', P_w_given_c)
 

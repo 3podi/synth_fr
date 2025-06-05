@@ -194,7 +194,7 @@ def top_k_ngrams(engine, tokenizer, max_len, beam_size):
             #            new_logp = log_p + math.log(prob)
             #            results.append((new_seq, new_logp))
             #        continue
-
+            
             for token, prob in top_next:
                 new_seq = seq + [token]
                 new_logp = log_p + math.log(prob)
@@ -202,6 +202,8 @@ def top_k_ngrams(engine, tokenizer, max_len, beam_size):
                     continue
                 count = engine.count(input_ids=new_seq)
                 if count['count']>50000 or count['count']<500:
+                    continue
+                if length > 2 and new_logp > -1.1:
                     continue
                 new_beam.append((new_seq, new_logp))
 

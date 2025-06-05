@@ -193,8 +193,8 @@ def main(note_path, output_path, vocab_path, save_flag=False, col='input', col_c
     P_w_given_c, P_c, idx2class = NaiveBayes(documents=documents, labels=labels, input_vocab=vocab)  
     print('Finished')
     
-    get_mutually_exclusive_top_words2(P_w_given_c=P_w_given_c, class_names=idx2class, vocab=vocab, top_k=10)
-    #show_top_words_per_class(P_w_given_c=P_w_given_c, vocab=vocab)
+    #get_mutually_exclusive_top_words2(P_w_given_c=P_w_given_c, class_names=idx2class, vocab=vocab, top_k=10)
+    show_top_words_per_class(P_w_given_c=P_w_given_c, vocab=vocab)
 
     if save_flag:
         np.save(f'{output_path}naive_bayes_output.npy', P_w_given_c)
