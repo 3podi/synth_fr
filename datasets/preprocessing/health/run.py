@@ -3,13 +3,12 @@ import random
 from typing import List
 
 import pandas as pd
-from datasets import load_dataset
 from preprocessing.keywords_extraction import KeywordsExtractor as Matcher
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM
 from vllm import LLM, SamplingParams
 
-import pandas as pd
+import argparse
 
 SAMPLE_SIZE = 1500
 RANDOM_SEED = 42
@@ -146,6 +145,11 @@ def generate_public_seed(
 
 
 if __name__ == "__main__":
-    processor = DataProcessor()
+    
+    parser = argparse.ArgumentParser(description= 'Setting note path')
+    parser.add_argument('note_path', type=str, help='Path to the notes')    
+    args = parser.parse_args()
+
+    processor = DataProcessor(args.note_path)
     processor.process_data()
     generate_public_seed()
