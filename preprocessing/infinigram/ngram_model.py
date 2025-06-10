@@ -184,7 +184,8 @@ class NGramModel:
     def postprocess_with_completion(self, file_path):
         """
         Reads a file of beam search outputs (log_p \t text),
-        applies n-gram word completion, and returns the completed texts.
+        applies n-gram word completion, and saves the completed texts
+        back with the same log_p.
 
         Args:
             file_path (str): Path to a .tsv output file.
@@ -192,16 +193,22 @@ class NGramModel:
         Returns:
             list[str]: Completed text strings.
         """
+        logps = []
         texts = []
+
+        # Read the file and split into log_p and text
         with open(file_path, 'r', encoding='utf-8') as f:
             for line in f:
                 parts = line.strip().split('\t', 1)
                 if len(parts) == 2:
-                    _, text = parts
+                    log_p_str, text = parts
+                    logps.append(log_p_str)
                     texts.append(text)
-        
+
+        # Apply word completion
         completed_texts = self.complete_unfinished_words(texts)
-        return completed_texts
+        
+        return logps, completed_texts
     
     def decode_and_save(self, seqs, n):
         """
@@ -215,11 +222,10 @@ class NGramModel:
                 text = self.detokenize(ids_seq).strip()
                 f.write(f"{log_p:.6f}\t{text}\n")
 
-def save_completed_texts(completed_texts, output_path):
+def save_completed_texts(logps, completed_texts, output_path):
     with open(output_path, 'w', encoding='utf-8') as f:
-        for text in completed_texts:
-            f.write(text.strip() + '\n')
-
+        for log_p, completed in zip(logps, completed_texts):
+            f.write(f"{log_p}\t{completed.strip()}\n")
     
 def main(args):
     
@@ -229,22 +235,22 @@ def main(args):
                     max_len=args.n,
                     beam_size=args.beam_size,
                     top_k=args.top_k,
-                    lower_limit_count=500,
-                    upper_limit_count=5000,
+                    lower_limit_count=args.lower_limit_count,
+                    upper_limit_count=args.upper_limit_count,
                     logp_cutoff=args.logp_cutoff,
                     logp_cutoff_iter=args.logp_cutoff_iter,
                     vocab_path=args.vocab_path   
                     )
     
-    #n_gram_model.beam_search()
+    n_gram_model.beam_search()
 
     files = os.listdir(args.save_path)
-    files = [f for f in files if f.startswith('tokens')]
+    files = [f for f in files if f.startswith('tokens') and f.endswith(f'{args.beam_size}.tsv')]
 
     for f in files:
         file_path = os.path.join(args.save_path,f)
-        completed_texts = n_gram_model.postprocess_with_completion(file_path)
-        save_completed_texts(completed_texts, os.path.join(args.save_path,f'completed_{f}'))
+        logps, completed_texts = n_gram_model.postprocess_with_completion(file_path)
+        save_completed_texts(logps, completed_texts, os.path.join(args.save_path,f'completed_{f}'))
 
 
 if __name__ == "__main__":
@@ -257,6 +263,8 @@ if __name__ == "__main__":
     parser.add_argument("--vocab_path", type=str, default=None, help="Path to vocab")
     parser.add_argument("--logp_cutoff", type=float, default=-1.1, help="After x iterations apply a cutoff in logp")
     parser.add_argument("--logp_cutoff_iter", type=int, default=2, help="After how many iterations apply a logp_cutoff")
+    parser.add_argument("--lower_limit_count", type=int, default=500, help="Minimum term freq in the dictionary")
+    parser.add_argument("--upper_limit_count", type=int, default=5000, help="Maximum term freq in the dictionary")
 
 
     args = parser.parse_args()
