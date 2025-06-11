@@ -1,15 +1,27 @@
 #!/bin/bash
-#SBATCH --job-name=hlth-pre
-#SBATCH --nodes=1
-#SBATCH --gres=gpu:8
-#SBATCH --cpus-per-task=40
-#SBATCH --output=log/slurm-%j.out
-#SBATCH --time=20:00:00
-#SBATCH --error=log/slurm-%j.err
-#SBATCH --partition=gpu_p5
-#SBATCH --account=oha@a100
-#SBATCH -C a100
-#SBATCH --qos=qos_gpu_a100-t3
+#SBATCH -t 3-00:00:00
+#SBATCH --gres=gpu:t4:1
+#SBATCH -p gpuT4
+#SBATCH -N1-1
+#SBATCH -c4
+#SBATCH --mem=40000
+#SBATCH -w bbs-edsg28-p012
+
+#debug
+# Set PATH manually to target the environment's bin directory
+#export PATH="/export/home/cse170020/.user_conda/miniconda/envs/aphp_env_39/bin:$PATH"
+
+# Optional: unset interfering Conda env vars
+#unset CONDA_PREFIX
+#unset PYTHONPATH
+#unset CONDA_DEFAULT_ENV
+
+# Debug output
+#echo "PATH: $PATH"
+#echo "Using python: $(which python)"
+#python --version
+#echo "Using pip: $(which pip)"
+#pip --version
 
 export HF_HUB_OFFLINE=1
 
@@ -19,4 +31,4 @@ conda activate synth-kg
 module load cuda
 
 # Run your processing script
-python datasets/preprocessing/health/run.py
+python datasets/preprocessing/health/run.py note_path="$DATASET_PATH"

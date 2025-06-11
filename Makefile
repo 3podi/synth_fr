@@ -1,5 +1,6 @@
 ADAPTER_PATHS := /lora/adapter1,/lora/adapter2
 DATASET_PATH := to/dataset/path
+NOTE_PATH := to/note/path
 DOMAIN := health
 ENV_FILE := .env
 EVALUATOR_PATH := sentence-transformers-paraphrase-MiniLM-L6-v2
@@ -39,7 +40,8 @@ sbatch launch/jz/generation.slurm \
 	--OUTPUT_PATH $(OUTPUT_PATH)
 
 jz-health-preprocessing:
-sbatch launch/jz/health-preprocessing.slurm
+sbatch launch/jz/health-preprocessing.slurm \
+	--export=ALL,NOTE_PATH=$(NOTE_PATH)
 
 jz-health-evaluation:
 ##  TODO: test with double quote fixing

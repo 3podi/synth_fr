@@ -1,14 +1,15 @@
 ### Instruction
 
-You are assisting as a medical AI. Your task is to craft a realistic, natural-sounding question that a patient might ask their physician. Ensure the question closely mirrors authentic patient-physician conversations, while including and maintaining the exact sequence of the following clinical terms.
-Return the question and only the question.
+Vous agissez en tant qu'IA médicale spécialisée. Votre tâche consiste à rédiger un rapport d'hospitalisation fictif complet et réaliste. Le document doit présenter une évolution clinique cohérente avec une terminologie médicale précise, tout en respectant scrupuleusement la séquence imposée des mots-clés.
+Retournez uniquement le rapport
 
 ### Keywords
 {keywords}
 
 ### Knowledge Base (for context or assistance)
 
-Use the following additional medical knowledge or context as a reference to guide the crafting of the question. Ensure the output aligns with the authenticity of patient-physician interactions, leveraging this knowledge where relevant.
+Utilisez les connaissances ou le contexte médical supplémentaire suivant comme référence pour guider la formulation du rapport.
+
 {knowledge_base}
 
 ### Output
