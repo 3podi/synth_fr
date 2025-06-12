@@ -8,12 +8,13 @@ from keywords_extraction import KeywordsExtractor as Matcher
 from tqdm import tqdm
 
 import argparse
+import pickle
 
 SAMPLE_SIZE = 1500
 RANDOM_SEED = 42
 SEED_SIZE = 500
-MODEL_NAME = "xz97/AlpaCare-llama2-13b"
-GPUS = 8
+MODEL_NAME = "meta-llama/llama-2-7b-hf" #"xz97/AlpaCare-llama2-13b"
+GPUS = 1
 TEMPERATURE = 0.7
 MAX_TOKENS = 2048
 OUTPUT_PATH = (
@@ -28,8 +29,8 @@ class KeywordExtractor:
         self.matcher = Matcher(list_definitions=list_definitions)
 
     def extract_keywords(self, text: str) -> str:
-        if pd.isna(text):
-            return ""
+        #if pd.isna(text):
+        #    return ""
         matches = self.matcher.extract(text)
         return ", ".join([match["match"] for match in matches])
 
@@ -37,7 +38,7 @@ class DataProcessor:
     def __init__(
         self,
         note_path: str,
-        string_database_path: str,
+        list_definitions: List[str],
         sample_size: int = SAMPLE_SIZE,
         random_seed: int = RANDOM_SEED,
         seed_size: int = SEED_SIZE,
@@ -45,7 +46,7 @@ class DataProcessor:
         self.sample_size = sample_size
         self.seed_size = seed_size
         random.seed(random_seed)
-        self.extractor = KeywordExtractor(list_definitions=string_database_path)
+        self.extractor = KeywordExtractor(list_definitions=list_definitions)
 
         self.note_path = note_path
 
@@ -65,7 +66,9 @@ class DataProcessor:
         prompt = open(PROMPT_PATH).read()
 
         df["keywords"] = df["text"].apply(lambda x: self.extractor.extract_keywords(x))
-        df["instruction"] = df["keywords"].apply(lambda kws: prompt.replace("{keywords}", kws)).replace("{knowledge_base}", '')
+        df["instruction"] = df["keywords"].apply(
+            lambda kws: prompt.replace("{keywords}", kws).replace("{knowledge_base}", '')
+        )
         
         seed_df = df[: self.seed_size].copy()
         gen_df = df[self.seed_size :].copy()
@@ -83,5 +86,9 @@ if __name__ == "__main__":
     parser.add_argument('strings_path', type=str, help='Path to the strings for similarity matching')    
     args = parser.parse_args()
 
-    processor = DataProcessor(args.note_path, args.strings_path)
+    with open(args.strings_path, 'rb') as file:
+        definitions = pickle.load(file)
+    definitions = definitions.keys()
+    
+    processor = DataProcessor(args.note_path, list_definitions=definitions)
     processor.process_data()
