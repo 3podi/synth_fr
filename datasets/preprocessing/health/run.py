@@ -7,8 +7,8 @@ from tqdm import tqdm
 from transformers import AutoModelForCausalLM
 from vllm import LLM, SamplingParams
 
-MODEL_NAME = "meta-llama/llama-2-7b-hf" #"xz97/AlpaCare-llama2-13b"
-GPUS = 1
+MODEL_NAME = "google/medgemma-4b-it"#"mistralai/Mistral-7B-v0.1" #"meta-llama/llama-2-7b-hf" #"xz97/AlpaCare-llama2-13b"
+GPUS = 2
 SAMPLE_SIZE = 1500
 TEMPERATURE = 0.7
 MAX_TOKENS = 2048
@@ -27,11 +27,12 @@ def generate_public_seed(
         max_tokens=MAX_TOKENS,
     )
     hf_model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
-    hf_model.save_pretrained("model/alpacare")
+    hf_model.save_pretrained(f"model/{MODEL_NAME}")
     llm = LLM(
         #model="model/alpacare",
         model=MODEL_NAME,
         tensor_parallel_size=GPUS,
+        #dtype="float16"
     )
     #for prompt in tqdm(df["instruction"], desc="Generating responses"):
     #    response = llm.generate(
@@ -44,7 +45,7 @@ def generate_public_seed(
         prompts,
         sampling_params=sampling_params,
     )
-    outputs.append(output.outputs[0].text for output in response)
+    outputs = [output.outputs[0].text for output in response]
     pd.DataFrame({"instruction": df["instruction"], "response": outputs}).to_parquet(output_path)
 
 
