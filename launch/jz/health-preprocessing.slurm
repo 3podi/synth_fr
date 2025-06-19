@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -t 3-00:00:00
-#SBATCH --gres=gpu:v100:1
+#SBATCH --gres=gpu:v100:2
 #SBATCH -N1-1
 #SBATCH -c4
 #SBATCH --mem=40000
@@ -23,7 +23,7 @@ python --version
 echo "Using pip: $(which pip)"
 pip --version
 
-export HF_HUB_OFFLINE=1
+#export HF_HUB_OFFLINE=1
 
 #module purge
 #module load miniforge/24.9.0

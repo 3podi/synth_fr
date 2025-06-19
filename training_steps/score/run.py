@@ -149,14 +149,14 @@ def calculate_statistics(public_dataset: pd.DataFrame, n: int, run: Any) -> None
     min_score = all_scores.min()
     median_score = pd.Series(all_scores).median()
 
-    run.log(
-        {
-            "score/mean": mean_score,
-            "score/max": max_score,
-            "score/min": min_score,
-            "score/median": median_score,
-        }
-    )
+    #run.log(
+    #    {
+    #        "score/mean": mean_score,
+    #        "score/max": max_score,
+    #        "score/min": min_score,
+    #        "score/median": median_score,
+    #    }
+    #)
     print(f"Mean: {mean_score:.4f}")
     print(f"Max: {max_score:.4f}")
     print(f"Min: {min_score:.4f}")
@@ -415,9 +415,9 @@ def truncate_responses(responses, tokenizer) -> list[str]:
 
 def score_dataset(n, sts_model, private_dataset, public_dataset, tp):
     # Initialize tokenizer for truncation
-    tokenizer = AutoTokenizer.from_pretrained("xz97/AlpaCare-llama2-13b")
-    private_responses = truncate_responses(private_dataset["response"].tolist(), tokenizer)
-    llm = LLM(model="xz97/AlpaCare-llama2-13b", tensor_parallel_size=tp, pipeline_parallel_size=1)
+    tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1")
+    private_responses = truncate_responses(private_dataset["text"].tolist(), tokenizer)
+    #llm = LLM(model="xz97/AlpaCare-llama2-13b", tensor_parallel_size=tp, pipeline_parallel_size=1)
     for i in range(1, n + 1):
         # Truncate public dataset responses
         public_responses = truncate_responses(public_dataset[f"response_{i}"].tolist(), tokenizer)
@@ -430,22 +430,22 @@ def score_dataset(n, sts_model, private_dataset, public_dataset, tp):
         public_dataset[f"similarity_score_{i}"] = scores
 
         # Compute Llama Preferences
-        preference_scores = compute_preference_score(
-            llm,
-            private_responses,
-            public_responses,
-            public_dataset["instruction"].tolist(),
-        )
-        public_dataset[f"preference_score_{i}"] = preference_scores
+        #preference_scores = compute_preference_score(
+        #    llm,
+        #    private_responses,
+        #    public_responses,
+        #    public_dataset["instruction"].tolist(),
+        #)
+        #public_dataset[f"preference_score_{i}"] = preference_scores
 
         # Compute Llama Filter
-        medical_flags = filter_medical_content(llm, public_responses)
-        public_dataset[f"is_medical_{i}"] = medical_flags
+        #medical_flags = filter_medical_content(llm, public_responses)
+        #public_dataset[f"is_medical_{i}"] = medical_flags
 
         # Compute Educational Scores
-        educational_results = compute_educational_score(llm, public_responses)
-        public_dataset[f"educational_score_{i}"] = educational_results["educational_scores"]
-        public_dataset[f"educational_response_{i}"] = educational_results["educational_responses"]
+        #educational_results = compute_educational_score(llm, public_responses)
+        #public_dataset[f"educational_score_{i}"] = educational_results["educational_scores"]
+        #public_dataset[f"educational_response_{i}"] = educational_results["educational_responses"]
 
         # Compute BLEU Score
         bleu_scores = compute_bleu_score(private_responses, public_responses)
@@ -456,7 +456,8 @@ def main() -> None:
     """Main function to score and create datasets for DPO training."""
     args = parse_arguments()
 
-    run = initialize_wandb(args)
+    #run = initialize_wandb(args)
+    run = None
 
     private_dataset, public_dataset = load_datasets(args.private_dataset, args.public_dataset)
 
@@ -464,11 +465,11 @@ def main() -> None:
     score_dataset(args.n, args.sts_model, private_dataset, public_dataset, args.tp)
 
     # Log to wandb
-    scored_table = wandb.Table(dataframe=public_dataset.head(1000))
-    wandb.log({"scored_table": scored_table})
-    artifact = wandb.Artifact(name="scored_table", type="dataset")
-    artifact.add(scored_table, "scored_table")
-    wandb.log_artifact(artifact)
+    #scored_table = wandb.Table(dataframe=public_dataset.head(1000))
+    #wandb.log({"scored_table": scored_table})
+    #artifact = wandb.Artifact(name="scored_table", type="dataset")
+    #artifact.add(scored_table, "scored_table")
+    #wandb.log_artifact(artifact)
 
     calculate_statistics(public_dataset, args.n, run)
 
