@@ -13,7 +13,7 @@ import pickle
 SAMPLE_SIZE = 1500
 RANDOM_SEED = 42
 SEED_SIZE = 500
-MODEL_NAME = "meta-llama/llama-2-7b-hf" #"xz97/AlpaCare-llama2-13b"
+MODEL_NAME = "google/medgemma-4b-it"#"mistralai/Mistral-7B-v0.1" #"meta-llama/llama-2-7b-hf" #"xz97/AlpaCare-llama2-13b"
 GPUS = 1
 TEMPERATURE = 0.7
 MAX_TOKENS = 2048
