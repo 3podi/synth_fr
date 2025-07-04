@@ -4,51 +4,73 @@ from typing import List
 
 import pandas as pd
 from tqdm import tqdm
-from transformers import AutoModelForCausalLM
-from vllm import LLM, SamplingParams
+import argparse
 
-MODEL_NAME = "google/medgemma-4b-it"#"mistralai/Mistral-7B-v0.1" #"meta-llama/llama-2-7b-hf" #"xz97/AlpaCare-llama2-13b"
-GPUS = 2
-SAMPLE_SIZE = 1500
-TEMPERATURE = 0.7
-MAX_TOKENS = 2048
-OUTPUT_PATH = (
-    f"datasets/health/model={MODEL_NAME.replace('/', '-')}_t" f"={TEMPERATURE}_size={SAMPLE_SIZE}"
-)
+def parse_arguments():
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--sft_path", type=str, required=True, help="Path to the anonymous sft data to be splitted in public seed for sft and public seed for generation/scoring"
+    )
+    
+    parser.add_argument(
+        "--output_path", type=str, required=False,
+        default="datasets/health/", help="Base path to save the data"
+    )
+    
+    parser.add_argument(
+        "--sft_size", type=int, required=True, help="Number of sft dataset size"
+    )
+    
+    parser.add_argument(
+        "--model_name", type=str, required=True, help="Chosen model"
+    )
 
-def generate_public_seed(
-    input_path: str = f"{OUTPUT_PATH}/private_seed.parquet",
-    output_path: str = f"{OUTPUT_PATH}/public_seed.parquet",
-):
+    return parser.parse_args()
+
+
+def generate_public_and_private_seeds(input_path: str, output_dir: str, n1: int, seed: int = 42):
+    """
+    Samples N1 rows from a Parquet file and saves them as two separate files
+    (public_seed.parquet and private_seed.parquet) in the output directory.
+
+    Parameters:
+        input_path (str): Path to the input .parquet file.
+        output_dir (str): Directory to save the sampled files.
+        n1 (int): Number of samples for the public seed.
+        seed (int): Random seed for reproducibility.
+    """
     df = pd.read_parquet(input_path)
-    outputs = []
-    sampling_params = SamplingParams(
-        temperature=TEMPERATURE,
-        max_tokens=MAX_TOKENS,
-    )
-    hf_model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
-    hf_model.save_pretrained(f"model/{MODEL_NAME}")
-    llm = LLM(
-        #model="model/alpacare",
-        model=MODEL_NAME,
-        tensor_parallel_size=GPUS,
-        #dtype="float16"
-    )
-    #for prompt in tqdm(df["instruction"], desc="Generating responses"):
-    #    response = llm.generate(
-    #        prompt,
-    #        sampling_params=sampling_params,
-    #    )
-    #    outputs.append(output.outputs[0].text for output in response)
-    prompts = df["instruction"].tolist()
-    response = llm.generate(
-        prompts,
-        sampling_params=sampling_params,
-    )
-    outputs = [output.outputs[0].text for output in response]
-    pd.DataFrame({"instruction": df["instruction"], "response": outputs}).to_parquet(output_path)
+
+    # Shuffle the full dataset reproducibly
+    shuffled_df = df.sample(frac=1, random_state=seed).reset_index(drop=True)
+
+    public_seed = shuffled_df.iloc[:n1]
+    private_seed = shuffled_df.iloc[n1:]
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    public_path = os.path.join(output_dir, "public_seed.parquet")
+    private_path = os.path.join(output_dir, "private_seed.parquet")
+    public_seed.to_parquet(public_path, index=False)
+    private_seed.to_parquet(private_path, index=False)
+
+    print(f"Saved {n1} public samples to: {public_path}")
 
 
 if __name__ == "__main__":
     
-    generate_public_seed()
+    args = parse_arguments()
+    
+    output_dir = f"{args.output_path}/model={args.model_name.replace('/', '-')}_size={args.sft_size}"
+    os.makedirs(output_dir, exist_ok=True)
+
+    generate_public_and_private_seeds(
+        input_path=args.sft_path,
+        output_dir=output_dir,
+        n1=args.sft_size
+    )
+    
+
+    
+    
