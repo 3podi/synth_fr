@@ -59,16 +59,7 @@ def remove_duplicates(list1, list2):
     return result1, result2
     
 def normalize_whitespace(text):
-    """
-    Replaces multiple consecutive whitespace characters with a single space,
-    and strips leading/trailing whitespace.
-
-    Args:
-        text (str): Input string.
-
-    Returns:
-        str: Cleaned string with normalized whitespace.
-    """
+    # Replace multiple spaces with a single space
     return re.sub(r'\s+', ' ', text).strip()
     
 class DataProcessorDocx:
@@ -150,6 +141,7 @@ class DataProcessorDocx:
             definitions = []
             
             text = self.extract_text_from_docx(path)
+            print(text)
             for i, t in enumerate(text):
                 
                 if check_icd_code(t):                
@@ -177,16 +169,17 @@ class DataProcessorDocx:
             assert len(codes) == len(definitions)
             
             crh_text = normalize_whitespace(" ".join(text[crh_pos+1:resume_pos]))
+            print('\nFINAL TEXT: ', crh_text)
             codes, definitions = remove_duplicates(codes, definitions)
             #print(codes)
             codes = " ".join(codes)
-            definitions = "###".join(definitions)
+            definitions = ", ".join(definitions)
             
             all_texts.append(crh_text)
             all_codes.append(codes)
             all_definitions.append(definitions)
             
-            print(crh_text)
+            #print(crh_text)
             #print('\n')
             #print(codes)
             #print('\n')

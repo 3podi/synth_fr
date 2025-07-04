@@ -37,7 +37,7 @@ def main():
     sent_dataset = dataset.map(split_sentences, batched=True, remove_columns=dataset['train'].column_names)
     #tokenizer = AutoTokenizer.from_pretrained(model_name)
     #translator = pipeline("translation", model="Helsinki-NLP/opus-mt-fr-en", max_length=512, device=0)
-    translator = pipeline("translation_en_to_fr")
+    translator = pipeline("translation_en_to_fr", device=0)
     
     print(translator.model.device)  # Should say 'cuda:0' if on GPU
 
@@ -45,7 +45,7 @@ def main():
     translated_dataset = sent_dataset.map(
         lambda x: translate_batch(x, translator=translator),
         batched=True,
-        batch_size=64,
+        batch_size=16,
         remove_columns=["sentence"]
     )
 

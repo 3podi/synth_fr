@@ -69,7 +69,7 @@ class DataProcessor:
         df["instruction"] = df["keywords"].apply(
             lambda kws: prompt.replace("{keywords}", kws).replace("{knowledge_base}", '')
         )
-        
+                
         seed_df = df[: self.seed_size].copy()
         gen_df = df[self.seed_size :].copy()
 

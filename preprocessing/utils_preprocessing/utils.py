@@ -13,10 +13,12 @@ french_stopwords = set([
     "alors", "au", "aucuns", "aussi", "autre", "avant", "avec", "avoir", "bon", "car", "ce", "cela", "ces", "ceux", "chaque", "ci", "comme", "comment", "dans", "des", "du", "dedans", "dehors", "depuis", "devrait", "doit", "donc", "dos", "droite", "début", "elle", "elles", "en", "encore", "essai", "est", "et", "eu", "fait", "faites", "fois", "font", "force", "haut", "hors", "ici", "il", "ils", "je", "juste", "la", "le", "les", "leur", "là", "ma", "maintenant", "mais", "mes", "mine", "moins", "mon", "mot", "même", "ni", "nommés", "notre", "nous", "nouveaux", "ou", "où", "par", "parce", "parole", "pas", "personnes", "peut", "peu", "pièce", "plupart", "pour", "pourquoi", "quand", "que", "quel", "quelle", "quelles", "quels", "qui", "sa", "sans", "ses", "seulement", "si", "sien", "son", "sont", "sous", "soyez", "sujet", "sur", "ta", "tandis", "tellement", "tels", "tes", "ton", "tous", "tout", "trop", "très", "tu", "voient", "vont", "votre", "vous", "vu", "ça", "étaient", "état", "étions", "été", "être", "mmol","mol","nmol"
 ])
 
-import spacy
-nlp = spacy.load("fr_core_news_sm")
-french_stopwords = set(nlp.Defaults.stop_words).union(french_stopwords)
-del nlp
+#import spacy
+#nlp = spacy.load("fr_core_news_sm")
+#french_stopwords = set(nlp.Defaults.stop_words).union(french_stopwords)
+#del nlp
+
+french_stopwords = ['a','ai','aie','aient','aies','ait','alors','as','au','aucun','aura','aurai','auraient','aurais','aurait','auras','aurez','auriez','aurions','aurons','auront','aussi','autre','aux','avaient','avais','avait','avant','avec','avez','aviez','avions','avoir','avons','ayant','ayez','ayons','bon','car','ce','ceci','cela','ces','cet','cette','ceux','chaque','ci','comme','comment','d','dans','de','dedans','dehors','depuis','des','deux','devoir','devrait','devrez','devriez','devrions','devrons','devront','dois','doit','donc','dos','droite','du','dès','début','dù','elle','elles','en','encore','es','est','et','eu','eue','eues','eurent','eus','eusse','eussent','eusses','eussiez','eussions','eut','eux','eûmes','eût','eûtes','faire','fais','faisez','fait','faites','fois','font','force','furent','fus','fusse','fussent','fusses','fussiez','fussions','fut','fûmes','fût','fûtes','haut','hors','ici','il','ils','j','je','juste','l','la','le','les','leur','leurs','lui','là','m','ma','maintenant','mais','me','mes','moi','moins','mon','mot','même','n','ne','ni','nom','nommé','nommée','nommés','nos','notre','nous','nouveau','nouveaux','on','ont','ou','où','par','parce','parole','pas','personne','personnes','peu','peut','plupart','pour','pourquoi','qu','quand','que','quel','quelle','quelles','quels','qui','sa','sans','se','sera','serai','seraient','serais','serait','seras','serez','seriez','serions','serons','seront','ses','seulement','si','sien','soi','soient','sois','soit','sommes','son','sont','sous','soyez','soyons','suis','sujet','sur','t','ta','tandis','te','tellement','tels','tes','toi','ton','tous','tout','trop','très','tu','un','une','valeur','voient','vois','voit','vont','vos','votre','vous','vu','y','à','ça','étaient','étais','était','étant','état','étiez','étions','été','étés','êtes','être']
 
 def remove_symbols(text):
     # Remove everything that's not a letter, digit, or whitespace
