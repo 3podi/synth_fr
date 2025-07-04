@@ -28,12 +28,16 @@ def parse_arguments():
 
 def main():
     args = parse_arguments()
-    merge_adapters(args.model, args.adapters.split(","), args.output_path),
+    print("About to merge adapters with those paths: ", args.adapters.split(","))
+    merge_adapters(args.model, args.adapters.split(","), args.output_path)
 
 
 def merge_adapters(model_name, adapter_paths, output_path):
+    print('Loading pretrained model: ', model_name)
     model = AutoModelForCausalLM.from_pretrained(model_name)
-
+    
+    print("Got pretrained model.")
+    print("Adapters paths in function: ", adapter_paths)
     for adapter_path in adapter_paths:
         print(f"merge: {adapter_path} ...")
         model = PeftModel.from_pretrained(model, adapter_path)

@@ -194,6 +194,13 @@ def parse_arguments() -> argparse.Namespace:
         default=1,
         help="Number of GPUs to use for inference",
     )
+    
+    parser.add_argument(
+        "--model_name",
+        type=str,
+        required=True,
+        help="Name of the model to load the tokenizer",
+    )
     return parser.parse_args()
 
 
@@ -413,10 +420,12 @@ def truncate_responses(responses, tokenizer) -> list[str]:
     return truncated_responses
 
 
-def score_dataset(n, sts_model, private_dataset, public_dataset, tp):
+def score_dataset(n, sts_model, private_dataset, public_dataset, tp, model_name):
     # Initialize tokenizer for truncation
-    tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1")
-    private_responses = truncate_responses(private_dataset["text"].tolist(), tokenizer)
+    #tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1")
+    #tokenizer = AutoTokenizer.from_pretrained("meta-llama/llama-2-7b-hf")
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    private_responses = truncate_responses(private_dataset["response"].tolist(), tokenizer)
     #llm = LLM(model="xz97/AlpaCare-llama2-13b", tensor_parallel_size=tp, pipeline_parallel_size=1)
     for i in range(1, n + 1):
         # Truncate public dataset responses
@@ -462,7 +471,7 @@ def main() -> None:
     private_dataset, public_dataset = load_datasets(args.private_dataset, args.public_dataset)
 
     # Score each response
-    score_dataset(args.n, args.sts_model, private_dataset, public_dataset, args.tp)
+    score_dataset(args.n, args.sts_model, private_dataset, public_dataset, args.tp, args.model_name)
 
     # Log to wandb
     #scored_table = wandb.Table(dataframe=public_dataset.head(1000))

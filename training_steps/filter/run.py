@@ -42,10 +42,10 @@ def preprocess_parquet(input_file):
                 "candidate_id": candidate_idx,
                 "response": row[f"response_{candidate_idx}"],
                 "similarity_score": row[f"similarity_score_{candidate_idx}"],
-                "preference_score": row[f"preference_score_{candidate_idx}"],
-                "is_medical": row[f"is_medical_{candidate_idx}"],
-                "educational_score": row[f"educational_score_{candidate_idx}"],
-                "educational_response": row[f"educational_response_{candidate_idx}"],
+                #"preference_score": row[f"preference_score_{candidate_idx}"],
+                #"is_medical": row[f"is_medical_{candidate_idx}"],
+                #"educational_score": row[f"educational_score_{candidate_idx}"],
+                #"educational_response": row[f"educational_response_{candidate_idx}"],
                 "bleu_score": row[f"bleu_score_{candidate_idx}"],
             }
 
@@ -167,14 +167,14 @@ def create_dpo_dataset(sorted_df, output_prefix, sort_key):
             "rejected": worst_example["response"],
             "chosen_similarity_score": best_example["similarity_score"],
             "rejected_similarity_score": worst_example["similarity_score"],
-            "chosen_preference_score": best_example["preference_score"],
-            "rejected_preference_score": worst_example["preference_score"],
-            "chosen_educational_score": best_example["educational_score"],
-            "rejected_educational_score": worst_example["educational_score"],
+            #"chosen_preference_score": best_example["preference_score"],
+            #"rejected_preference_score": worst_example["preference_score"],
+            #"chosen_educational_score": best_example["educational_score"],
+            #"rejected_educational_score": worst_example["educational_score"],
             "chosen_bleu_score": best_example["bleu_score"],
             "rejected_bleu_score": worst_example["bleu_score"],
-            "chosen_is_medical": best_example["is_medical"],
-            "rejected_is_medical": worst_example["is_medical"],
+            #"chosen_is_medical": best_example["is_medical"],
+            #"rejected_is_medical": worst_example["is_medical"],
         }
         paired_examples.append(paired_row)
 
@@ -217,18 +217,19 @@ def process_data(input_file):
     # Preprocess: separate candidates into different rows
     preprocessed_df = preprocess_parquet(input_file)
 
-    print("Filtering by medical...")
+    #print("Filtering by medical...")
     # Filter by is_medical=True for at least one candidate
-    filtered_df = filter_by_medical(preprocessed_df)
-    filtered_df = filtered_df[filtered_df["educational_score"] < 6]
-
+    #filtered_df = filter_by_medical(preprocessed_df)
+    #filtered_df = filtered_df[filtered_df["educational_score"] < 6]
+    filtered_df = preprocessed_df
+    
     # Define sorting methods
     sorting_methods = {
-        "mes": ["is_medical", "educational_score", "similarity_score"],
-        "ms": ["is_medical", "similarity_score"],
+        #"mes": ["is_medical", "educational_score", "similarity_score"],
+        #"ms": ["is_medical", "similarity_score"],
         "s": ["similarity_score"],
-        "e": ["educational_score"],
-        "se": ["similarity_score", "educational_score"],
+        #"e": ["educational_score"],
+        #"se": ["similarity_score", "educational_score"],
     }
 
     # Process each sorting method
@@ -252,8 +253,8 @@ def process_data(input_file):
         print(f"Creating DPO dataset with {sort_key} sorting...")
         create_dpo_dataset(sorted_df, output_prefix, sort_key)
 
-    eval_sorted_df = filtered_df.sort_values(by=["is_medical"], ascending=False)
-    create_eval_dataset(eval_sorted_df, f"{os.path.splitext(input_file)[0]}_eval.parquet")
+    #eval_sorted_df = filtered_df.sort_values(by=["is_medical"], ascending=False)
+    #create_eval_dataset(eval_sorted_df, f"{os.path.splitext(input_file)[0]}_eval.parquet")
 
 
 if __name__ == "__main__":

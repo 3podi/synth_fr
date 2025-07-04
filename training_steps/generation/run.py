@@ -67,6 +67,7 @@ def main():
     args = parse_arguments()
 
     # we use a contextual path only because we deploy the script via skypilot
+    print("Reading parquet")
     df = pd.read_parquet(args.dataset)
     # Extract the specific column
     prompts = df["instruction"]
@@ -78,6 +79,7 @@ def main():
         pipeline_parallel_size=args.pp,
     )
     # Generate multiple responses per prompt
+    print("Generating responses")
     responses = generate_responses(llm, prompts, num_sequences=args.num_sequences)
 
     # Create output dataframe with multiple response columns
