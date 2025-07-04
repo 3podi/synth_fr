@@ -1,20 +1,30 @@
 #!/bin/bash
-#SBATCH --job-name=sft
-#SBATCH --nodes=1
-#SBATCH --partition=gpu_p6
-#SBATCH --account=lch@h100
-#SBATCH -C h100
-#SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=40
-#SBATCH --output=log/slurm-%j.out
-#SBATCH --time=01:00:00
-#SBATCH --error=log/slurm-%j.err
-#SBATCH --qos=qos_gpu_h100-dev
-#SBATCH --mail-type=END
-#SBATCH --mail-user=simon.meoni@inria.fr
+#SBATCH -t 3-00:00:00
+#SBATCH --gres=gpu:v100:1
+#SBATCH -N1-1
+#SBATCH -c4
+#SBATCH --mem=40000
+#SBATCH -p gpuV100  
+#SBATCH -w bbs-edsg28-p004
+
+#debug
+# Set PATH manually to target the environment's bin directory
+export PATH="/export/home/cse170020/.user_conda/miniconda/envs/synth-kg/bin:$PATH"
+
+# Optional: unset interfering Conda env vars
+unset CONDA_PREFIX
+unset PYTHONPATH
+unset CONDA_DEFAULT_ENV
+
+# Debug output
+echo "PATH: $PATH"
+echo "Using python: $(which python)"
+python --version
+echo "Using pip: $(which pip)"
+pip --version
 
 # Initialize variables with default values
-HYDRA_CONFIG="default.yaml"
+HYDRA_CONFIG="health.yaml"
 
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
@@ -35,9 +45,10 @@ while [[ "$#" -gt 0 ]]; do
   shift
 done
 
-module purge
-module load arch/h100
-module load miniforge/24.9.0
-conda activate synth-kg
+export WANDB_MODE=offline
+#module purge
+#module load arch/h100
+#module load miniforge/24.9.0
+#conda activate synth-kg
 eval set -- "$HYDRA_ARGS"
 python training_steps/sft/train.py --config-name="$HYDRA_CONFIG" "$@"

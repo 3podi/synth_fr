@@ -40,6 +40,14 @@ while [[ "$#" -gt 0 ]]; do
     GROUP_ID="$2"
     shift
     ;;
+  --SLURM_GPUS_ON_NODE)
+    SLURM_GPUS_ON_NODE="$2"
+    shift
+    ;;
+  --MODEL_NAME)
+    MODEL_NAME="$2"
+    shift
+    ;;
   *)
     echo "Unknown parameter passed: $1"
     exit 1
@@ -71,7 +79,7 @@ python --version
 echo "Using pip: $(which pip)"
 pip --version
 
-export HF_HUB_OFFLINE=1
+export HF_HUB_OFFLINE=0
 echo "$OUTPUT_PATH"
 echo "$PRIVATE_DATASET"
 python training_steps/score/run.py \
@@ -82,4 +90,5 @@ python training_steps/score/run.py \
   --output_path "$OUTPUT_PATH" \
   --n "$N" \
   --wdb_id "$WDB_ID" \
-  --group_id "$GROUP_ID"
+  --group_id "$GROUP_ID" \
+  --model_name "$MODEL_NAME"
