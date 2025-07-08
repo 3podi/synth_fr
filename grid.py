@@ -150,10 +150,10 @@ class Pipeline:
 def main(cfg: DictConfig):
     pipeline = Pipeline(cfg)
     pipeline.run_train_steps()
-    pipeline.run_generation()
-    pipeline.run_score()
-    pipeline.run_filter()
-    pipeline.run_eval()
+    #pipeline.run_generation()
+    #pipeline.run_score()
+    #pipeline.run_filter()
+    #pipeline.run_eval()
 
 
 if __name__ == "__main__":

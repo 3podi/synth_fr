@@ -10,10 +10,16 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import SFTTrainer, get_peft_config
 
 import os
-
-#from dataset import StreamingChunkedDataset
+import sys
 
 logger = logging.getLogger(__name__)
+
+from transformers import TrainerCallback
+class PrintAllLogsCallback(TrainerCallback):
+    def on_log(self, args, state, control, logs, **kwargs):
+        print(f"[Step {state.global_step}] Logs: {logs}")
+        sys.stdout.flush()
+
 
 def chunk_tokens_with_padding(example, padding_token, chunk_size=512, stride=64):
     input_ids = example["input_ids"]
@@ -27,10 +33,11 @@ def chunk_tokens_with_padding(example, padding_token, chunk_size=512, stride=64)
         if chunk_len < chunk_size:
             pad_length = chunk_size - chunk_len
             chunk += [padding_token] * pad_length
+            chunk_len += 1    #include eos token in the attention mask
 
         chunks.append({
             "input_ids": chunk,
-            "attention_mask": [1] * chunk_len + [0] * (chunk_size - chunk_len),
+            "attention_mask": [1] * chunk_len + [0] * (chunk_size - chunk_len), 
             "labels": chunk,
         })
     return {"chunk": chunks}
@@ -161,6 +168,8 @@ def main(cfg: DictConfig):
                 yield chunk_dict
 
     dataset = Dataset.from_generator(lambda: chunks_generator(dataset))
+    #dataset = dataset.map(lambda x: {"n_tokens": len(x['input_ids'])})
+    #print(dataset["n_tokens"])
     split_dataset = dataset.train_test_split(test_size=0.1, seed=42)
     train_dataset = split_dataset['train']
     val_dataset = split_dataset['test']
@@ -174,10 +183,11 @@ def main(cfg: DictConfig):
         eval_dataset=val_dataset,
         tokenizer=tokenizer,
         peft_config=get_peft_config(model_config),
+         callbacks=[PrintAllLogsCallback()],
     )
-    
+
     trainer.train()
-    #trainer.save_model(cfg.sft_config.output_dir)
+    trainer.save_model(cfg.sft_config.output_dir)
 
 if __name__ == "__main__":
     main()

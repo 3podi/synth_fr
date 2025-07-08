@@ -8,6 +8,11 @@ from peft import PeftModel
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import DPOTrainer
 
+from transformers import TrainerCallback
+class PrintAllLogsCallback(TrainerCallback):
+    def on_log(self, args, state, control, logs, **kwargs):
+        print(f"[Step {state.global_step}] Logs: {logs}")
+        sys.stdout.flush()
 
 @hydra.main(version_base=None, config_path="./configs", config_name="default")
 def main(cfg):
@@ -30,6 +35,10 @@ def main(cfg):
         job_type="training",
         group=f"{cfg.group_id}",
     )
+    
+    print("---DPO starting---")
+    print("Iter: ", cfg.iteration)
+    print("Adapters: ", cfg.adapters_paths)
     model_config = hydra.utils.instantiate(cfg.model_config)
     dpo_config = hydra.utils.instantiate(cfg.dpo_config)
     peft_config = hydra.utils.instantiate(cfg.peft_config)
@@ -75,7 +84,8 @@ def main(cfg):
         train_dataset=dataset,
     )
     dpo_trainer.train()
-    dpo_path = f"lora/dpo-{cfg.iteration}/{wandb.run.id}"
+    #dpo_path = f"lora/dpo-{cfg.iteration}/{wandb.run.id}"
+    dpo_path = f"lora/dpo/{cfg.run_id}/iteration_{cfg.iteration}"
     dpo_trainer.save_model(dpo_path)
 
 

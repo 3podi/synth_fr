@@ -49,5 +49,6 @@ echo "Using python: $(which python)"
 python --version
 echo "Using pip: $(which pip)"
 
+export WANDB_MODE=offline
 eval set -- "$HYDRA_ARGS"
 python training_steps/alignment/dpo.py --config-name="$HYDRA_CONFIG" "$@"
