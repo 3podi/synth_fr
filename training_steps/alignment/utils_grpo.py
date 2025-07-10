@@ -2,6 +2,8 @@ import re
 from collections import Counter
 
 from typing import List
+import unicodedata
+import re
 
 reasoning_start = "<réfléchir>"
 reasoning_end = "</réfléchir>"
