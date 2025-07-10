@@ -9,6 +9,8 @@ from omegaconf import DictConfig, ListConfig, OmegaConf
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import SFTTrainer, get_peft_config
 
+from transformers.data.data_collator import DefaultDataCollator
+
 import os
 import sys
 
@@ -21,7 +23,7 @@ class PrintAllLogsCallback(TrainerCallback):
         sys.stdout.flush()
 
 
-def chunk_tokens_with_padding(example, padding_token, chunk_size=512, stride=64):
+def chunk_tokens_with_padding(example, padding_token, chunk_size=512, stride=448):
     input_ids = example["input_ids"]
     chunks = []
 
@@ -33,12 +35,18 @@ def chunk_tokens_with_padding(example, padding_token, chunk_size=512, stride=64)
         if chunk_len < chunk_size:
             pad_length = chunk_size - chunk_len
             chunk += [padding_token] * pad_length
+            #print('Len padded chunk: ', len(chunk))
+            #print('N token in un padded chunk: ', chunk_len)
             chunk_len += 1    #include eos token in the attention mask
-
+            #print('N tokens for loss: ', chunk_len)
+            #print('labels: ',chunk[:chunk_len])
+        
+        labels = chunk[:chunk_len] + [-100] * (chunk_size - chunk_len) #-100 to not compute loss on pad tokens
+        
         chunks.append({
             "input_ids": chunk,
             "attention_mask": [1] * chunk_len + [0] * (chunk_size - chunk_len), 
-            "labels": chunk,
+            "labels": labels,
         })
     return {"chunk": chunks}
     #return chunks
@@ -100,6 +108,7 @@ def main(cfg: DictConfig):
         tokenizer.pad_token = tokenizer.eos_token
 
     print(f'Using padding token: {tokenizer.pad_token}, ID: {tokenizer.pad_token_id}')
+    print(f'Using eos token: {tokenizer.eos_token}, ID: {tokenizer.eos_token_id}')
         
     def format_and_tokenize(example):
         return tokenizer(
@@ -168,6 +177,9 @@ def main(cfg: DictConfig):
                 yield chunk_dict
 
     dataset = Dataset.from_generator(lambda: chunks_generator(dataset))
+    #column_names = list(next(iter(dataset)).keys())
+    #print('aaa: ', column_names)
+    
     #dataset = dataset.map(lambda x: {"n_tokens": len(x['input_ids'])})
     #print(dataset["n_tokens"])
     split_dataset = dataset.train_test_split(test_size=0.1, seed=42)
@@ -176,6 +188,8 @@ def main(cfg: DictConfig):
     print('len train: ', len(train_dataset))
     print('len val: ', len(val_dataset))
     
+    data_collator = DefaultDataCollator(return_tensors="pt")
+    
     trainer = SFTTrainer(
         model=model,
         args=sft_config,
@@ -183,8 +197,26 @@ def main(cfg: DictConfig):
         eval_dataset=val_dataset,
         tokenizer=tokenizer,
         peft_config=get_peft_config(model_config),
-         callbacks=[PrintAllLogsCallback()],
+        callbacks=[PrintAllLogsCallback()],
+        data_collator=data_collator,
     )
+    
+    #train_dataloader = trainer.get_train_dataloader()
+    #first_batch = next(iter(train_dataloader))
+    #print('First batch:', first_batch)
+    
+    #print(first_batch['input_ids'][0])
+    #print(first_batch['labels'][0])
+    #print(len(first_batch['input_ids'][0]))
+    #print(len(first_batch['labels'][0]))    
+    
+    #input_ids_batch = first_batch["input_ids"] 
+    #decoded_texts = [tokenizer.decode(input_ids, skip_special_tokens=False) for input_ids in input_ids_batch]
+    #print(decoded_texts)
+    
+    #column_names = list(next(iter(train_dataloader)).keys())
+    #print('names: ', column_names)
+    #print('is processed: ', 'input_ids' in column_names)
 
     trainer.train()
     trainer.save_model(cfg.sft_config.output_dir)

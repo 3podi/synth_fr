@@ -53,6 +53,10 @@ while [[ "$#" -gt 0 ]]; do
     RUN_ID="$2"
     shift
     ;;
+  --N_PROMPTS)
+    N_PROMPTS="$2"
+    shift
+    ;;
   *)
     echo "Unknown parameter passed: $1"
     exit 1
@@ -80,5 +84,6 @@ CUDA_VISIBLE_DEVICES=0 python training_steps/generation/merge_adapters.py \
 python training_steps/generation/run.py --dataset "$DATASET_PATH" \
   --model "$MERGE_OUTPUT_PATH" \
   --output_path "$OUTPUT_PATH" \
+  --num_prompts "$N_PROMPTS" \
   #--tp "$SLURM_GPUS_ON_NODE" \
   #--pp "$SLURM_NNODES"

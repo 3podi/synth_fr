@@ -17,14 +17,14 @@ def to_str(adapters_path: list[str]) -> str:
     return f"[{','.join(adapters_path)}]"
 
 
-def format_hydra_args(dataset: str, group_id: str, adapters: list[str], run_id: str, model_name: str) -> str:
+def format_hydra_args(dataset: str, dataset_size: int, group_id: str, adapters: list[str], run_id: str, model_name: str) -> str:
     """
     Build a properly escaped Hydra override string for dataset, adapters, group ID, run ID, and model name.
     Important: dataset path values containing '=' must be escaped or quoted appropriately.
     """
     escape_dataset = dataset.replace("=", "\\=")
     return (
-        f"\"group_id={group_id} run_id={run_id} "
+        f"\"group_id={group_id} run_id={str(run_id)} dataset_size={dataset_size} "
         f"'adapters_paths={to_str(adapters)}' "
         f"'dataset={escape_dataset}' "
         f"model_config.model_name_or_path={model_name}\""
@@ -96,7 +96,7 @@ class Pipeline:
     def run_train_steps(self):
         script = self.cfg.scripts[self.cfg.step]
         dataset = self.dataset_path()
-        hydra_args = format_hydra_args(dataset, self.group_id, self.adapters, self.run_id, self.cfg.model_name)
+        hydra_args = format_hydra_args(dataset, self.cfg.size_sft, self.group_id, self.adapters, self.run_id, self.cfg.model_name)
         run_id = self.run_id #if idx == 0 else str(uuid.uuid4())[:7]
 
         cmd = (
@@ -114,6 +114,7 @@ class Pipeline:
             f"--ADAPTERS_PATHS {','.join(self.adapters)} "
             f"--OUTPUT_PATH {self.base_model_path()} "
             f"--RUN_ID {self.run_id} "
+            f"--N_PROMPTS {self.cfg.size_generation} "
             f"--MODEL {self.cfg.model_name}"
         )
         self.job_mgr.submit(cmd)

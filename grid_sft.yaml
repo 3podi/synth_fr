@@ -3,6 +3,8 @@ defaults:
   - _self_
 
 size: 1001
+size_sft: 1001 #can be lower than size if you want sft on less samples
+size_generation: 800 #number of prompts to use to generate sequences (4 answers for prompt by default)
 step: sft
 group_id: sft_llama2_7b
 sts_model: FremyCompany/BioLORD-2023
