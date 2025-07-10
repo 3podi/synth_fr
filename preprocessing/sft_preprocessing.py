@@ -28,9 +28,15 @@ class KeywordExtractor:
         #if pd.isna(text):
         #    return ""
         matches = self.matcher.extract(text)
-        return ", ".join([match["match"] for match in matches])
+        seen = set()
+        unique_matches = []
+        for match in matches:
+            m = match["match"]
+            if m not in seen:
+                seen.add(m)
+                unique_matches.append(m)
+        return ", ".join(unique_matches)
     
-
 def process_batch_keywords(batch, list_definitions):
     extractor = KeywordExtractor(list_definitions,database_dir='prova')
     #unique_keys = list(dict.fromkeys([extractor.extract_keywords(text) for text in batch['text']]))
@@ -73,7 +79,7 @@ class DataProcessor:
             df = self.load_and_sample_dataset(parquet_path)
 
             # Extract keywords
-            if "keywords" not in df.column_names:
+            if 'keywords' not in df.column_names:
                 df = df.map(
                     process_batch_keywords,
                     batched=True,
@@ -84,18 +90,18 @@ class DataProcessor:
                     desc="Extracting keywords"
                 )
                 
-            if "instruction" not in df.column_names:
-                df = df.map(
-                    process_batch_instruction,
-                    batched=True,
-                    batch_size=1000,
-                    num_proc=4,
-                    fn_kwargs={'prompt': prompt},
-                    #load_from_cache_file=False,
-                    desc="Making instructions"
-                )
-
-            df = df.rename_column("text", "response")
+            df = df.map(
+                process_batch_instruction,
+                batched=True,
+                batch_size=1000,
+                num_proc=4,
+                fn_kwargs={'prompt': prompt},
+                #load_from_cache_file=False,
+                desc="Making instructions"
+            )
+            
+            if "text" in df.column_names:
+                df = df.rename_column("text", "response")
 
             save_path = os.path.join(output_path, parquet)
             df.to_pandas().to_parquet(save_path, index=False)
@@ -104,8 +110,8 @@ class DataProcessor:
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description= 'Setting note path')
-    parser.add_argument('parquet_dir', type=str, help='Name of hf dataset')    
-    parser.add_argument('strings_path', type=str, help='Path to the strings for similarity matching')    
+    parser.add_argument('--parquet_dir', type=str, help='Name of hf dataset')    
+    parser.add_argument('--strings_path', type=str, help='Path to the strings for similarity matching')    
     args = parser.parse_args()
 
     with open(args.strings_path, 'rb') as file:

@@ -15,6 +15,13 @@ def parse_arguments():
     parser.add_argument(
         "--dataset", type=str, required=True, help="Path to input dataset parquet file"
     )
+
+    parser.add_argument(
+        "--num_prompts",
+        type=int,
+        default=100,
+        help="Number of different prompts to generate sequences",
+    )
     parser.add_argument(
         "--num_sequences",
         type=int,
@@ -69,6 +76,7 @@ def main():
     # we use a contextual path only because we deploy the script via skypilot
     print("Reading parquet")
     df = pd.read_parquet(args.dataset)
+    df = df.sample(n=args.num_prompts, random_state=42)
     # Extract the specific column
     prompts = df["instruction"]
 
