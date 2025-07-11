@@ -1,0 +1,8 @@
+#defaults:
+#  - default.yaml
+
+#adapters_paths: ???
+dataset: ???
+dataset_size: 10000 
+group_id: grpo_qwen_3B
+tags: [grpo, health]

@@ -85,7 +85,7 @@ def reward_match_format_exactly(completions, **kwargs):
 def count_repeats_penalty(pred_codes: List[str]):
     counts = Counter(pred_codes)
     penalty = sum(1 for freq in counts.values() if freq > 1)
-    reward = -1 * penalty
+    reward = -1 * penalty/len(counts.values()) 
     return reward
 
 def compute_f1(pred_codes: List[str], ref_codes: List[str]):
@@ -112,6 +112,7 @@ def reward_f1(completions, answer, **kwargs):
     scores = []   
     for guess, true_answer in zip(extracted_responses, answer):
         if guess is None:
+            scores.append(0)
             continue
         scores.append(compute_f1(guess.split(), true_answer.split()))
     
@@ -128,6 +129,7 @@ def reward_no_repeat(completions, **kwargs):
     scores = []   
     for guess in extracted_responses:
         if guess is None:
+            scores.append(-1)
             continue
         
         scores.append(count_repeats_penalty(guess.split()))
@@ -154,9 +156,10 @@ def reward_matching_keywords(prompts, completions, **kwargs):
 
         for text in extracted_texts:
             if text is None:
-                scores.append(len(prompt_keywords) * -1)
+                #scores.append(len(prompt_keywords) * -1)
+                scores.append(-1)
             else:
-                scores.append(sum(1 for key in prompt_keywords if key.lower() in text.lower()))
+                scores.append(sum(1 for key in prompt_keywords if key.lower() in text.lower())/len(prompt_keywords))
 
     return scores
 

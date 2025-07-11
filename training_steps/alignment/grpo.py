@@ -3,7 +3,9 @@ import torch
 from trl import GRPOConfig, GRPOTrainer
 import hydra
 from training_steps.alignment.utils_grpo import format_grpo, reward_match_format_exactly, reward_f1, reward_no_repeat, reward_matching_keywords
-
+from omegaconf import DictConfig, ListConfig, OmegaConf
+import wandb
+from datasets import Dataset
 
 @hydra.main(version_base=None, config_path="./configs", config_name="grpo")
 def main(cfg):
@@ -76,8 +78,10 @@ def main(cfg):
 
     #### DATA ####
     #can make a parquet from extraction results file, only need a map code2integer_id
-    dataset = Dataset.from_parquet(cfg.dataset).to_pandas().head(cfg.dataset_size)
-    dataset = dataset.map(format_grpo,batched=False)
+    dataset = Dataset.from_parquet(cfg.dataset)
+    max_size = min(cfg.dataset_size, len(dataset))
+    dataset = dataset.select(range(max_size))
+    dataset = dataset.map(format_grpo)
     
     split_dataset = dataset.train_test_split(test_size=0.1, seed=42)
     del dataset
@@ -99,7 +103,7 @@ def main(cfg):
             reward_matching_keywords
         ],
         args = training_args,
-        train_dataset = dataset,
+        train_dataset = train_dataset,
     )
     trainer.train()
     
