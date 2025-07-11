@@ -70,7 +70,7 @@ def main(cfg):
         max_steps = 250,
         save_steps = 250,
         max_grad_norm = 0.1,
-        report_to = "none", # Can use Weights & Biases
+        report_to = "wandb", # Can use Weights & Biases
         output_dir = "outputs",
     )
 
