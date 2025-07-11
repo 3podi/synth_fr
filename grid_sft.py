@@ -69,9 +69,9 @@ class Pipeline:
         self.train_steps = cfg.train_steps.split(" ")
         self.adapters = [] #[f"lora/{cfg.step}/{cfg.model_id}"]
         self.group_id = cfg.group_id
-        self.run_id = str(uuid.uuid4())[:7]
-        #self.run_id = '0e5f995'
-        #self.adapters.append('lora/sft/0e5f995')
+        #self.run_id = str(uuid.uuid4())[:7]
+        self.run_id = 'de7c5ab'
+        self.adapters.append('lora/sft/de7c5ab')
         self.job_mgr = JobManager()
         self.sts_model_path = self.cfg.sts_model.replace("/", "-")
         self.model_name = cfg.model_name.replace("/", "-")
@@ -160,9 +160,9 @@ class Pipeline:
 @hydra.main(config_path=".", config_name="grid_sft.yaml", version_base="1.3")
 def main(cfg: DictConfig):
     pipeline = Pipeline(cfg)
-    pipeline.run_train_steps()
-    pipeline.run_generation()
-    pipeline.run_score()
+    #pipeline.run_train_steps()
+    #pipeline.run_generation()
+    #pipeline.run_score()
     pipeline.run_filter()
     #pipeline.run_eval()
 

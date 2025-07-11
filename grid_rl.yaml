@@ -2,13 +2,14 @@
 defaults:
   - _self_
 
-size: 1000
+size: 1001
+size_generation: 10 #number of prompts to use to generate sequences (4 answers for prompt by default)
 step: dpo
 group_id: rl_llama2_7b
 run_id: ???
 sts_model: FremyCompany/BioLORD-2023
 domain: health
-private_path: datasets/health/model=meta-llama-llama-2-7b-hf_size=1000/private_seed.parquet
+private_path: datasets/health/model=meta-llama-llama-2-7b-hf_size=1001/private_seed.parquet
 tp: 1
 model_name: meta-llama/llama-2-7b-hf
 

@@ -5,7 +5,7 @@
 #SBATCH -c4
 #SBATCH --mem=40000
 #SBATCH -p gpuV100
-#SBATCH -w bbs-edsg28-p004
+#SBATCH -w bbs-edsg28-p006
 
 # Initialize variables with default values
 HYDRA_CONFIG="default.yaml"

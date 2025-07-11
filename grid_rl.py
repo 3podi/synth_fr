@@ -132,6 +132,7 @@ class Pipeline:
             f"--ADAPTERS_PATHS {','.join(self.adapters)} "
             f"--OUTPUT_PATH {self.output_file_path(iter)} "        #output_path: folder for genrated_public.parquet
             f"--RUN_ID {self.run_id} "
+            f"--N_PROMPTS {self.cfg.size_generation} "
             f"--MODEL {self.cfg.model_name}"
         )
         self.job_mgr.submit(cmd)
@@ -180,8 +181,8 @@ def main(cfg: DictConfig):
     for iter in range(cfg.start_it,cfg.end_it):
         pipeline.run_train_steps(iter)
         pipeline.run_generation(iter)
-        #pipeline.run_score(iter)
-        #pipeline.run_filter(iter)
+        pipeline.run_score(iter)
+        pipeline.run_filter(iter)
         #pipeline.run_eval()
 
 

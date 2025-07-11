@@ -8,6 +8,7 @@ from peft import PeftModel
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import DPOTrainer
 
+import sys
 from transformers import TrainerCallback
 class PrintAllLogsCallback(TrainerCallback):
     def on_log(self, args, state, control, logs, **kwargs):
@@ -82,6 +83,7 @@ def main(cfg):
         model=model,
         tokenizer=tokenizer,
         train_dataset=dataset,
+        callbacks=[PrintAllLogsCallback()],
     )
     dpo_trainer.train()
     #dpo_path = f"lora/dpo-{cfg.iteration}/{wandb.run.id}"

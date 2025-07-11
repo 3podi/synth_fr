@@ -26,12 +26,15 @@ def preprocess_parquet(input_file):
     expanded_rows = []
 
     # Assign a unique ID for each example (row in the original dataframe)
-    example_ids = np.arange(len(df))
+    #example_ids = np.arange(len(df))
 
     # For each row in the original dataframe
-    for i, row in df.iterrows():
-        example_id = example_ids[i]
-        instruction = row["instruction"]
+    #for i, row in df.iterrows():
+    #    example_id = example_ids[i]
+    for idx, row in enumerate(df.itertuples(index=False)):
+        example_id = idx
+        #instruction = row["instruction"]
+        instruction = row.instruction
 
         # For each candidate
         for candidate_idx in range(1, num_candidates + 1):
@@ -40,13 +43,13 @@ def preprocess_parquet(input_file):
                 "example_id": example_id,
                 "instruction": instruction,
                 "candidate_id": candidate_idx,
-                "response": row[f"response_{candidate_idx}"],
-                "similarity_score": row[f"similarity_score_{candidate_idx}"],
+                "response": getattr(row, f"response_{candidate_idx}"),
+                "similarity_score": getattr(row, f"similarity_score_{candidate_idx}"),
                 #"preference_score": row[f"preference_score_{candidate_idx}"],
                 #"is_medical": row[f"is_medical_{candidate_idx}"],
                 #"educational_score": row[f"educational_score_{candidate_idx}"],
                 #"educational_response": row[f"educational_response_{candidate_idx}"],
-                "bleu_score": row[f"bleu_score_{candidate_idx}"],
+                "bleu_score": getattr(row, f"bleu_score_{candidate_idx}"),
             }
 
             expanded_rows.append(new_row)
