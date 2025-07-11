@@ -136,24 +136,28 @@ def reward_no_repeat(completions, **kwargs):
 
 ### CAREFULL: the keywords must be not normalized -> redo processing (or normalize text) (carefull partages keywords are not normalized)
 def reward_matching_keywords(prompts, completions, **kwargs):
-    question = prompts[0][-1]["content"]
-    responses = [completion[0]["content"] for completion in completions]
+    scores = []
 
-    prompt_keywords = question.split("###")[1].split(",")
-    prompt_keywords = [kw.strip() for kw in prompt_keywords]
-    
-    extracted_texts = [
-        normalize_text(guess.group(1))
-        if (guess := match_text.search(r)) is not None else None \
-        for r in responses
-    ]
-    
-    scores[]
-    for text in extracted_texts:       
-        if text is None:
-            scores.append(len(prompt_keywords)*-1)
-            continue
-        scores.append(sum([1 for key in prompt_keywords if key in text]))
+    for prompt, response_group in zip(prompts, completions):
+        question = prompt[-1]["content"]  # Get the prompt for this sample
+        responses = [completion["content"] for completion in response_group]
+
+        prompt_keywords = question.split('</SOLUTION>.')[1].split(",")
+        prompt_keywords = [kw.strip() for kw in prompt_keywords]
+        print("Found those prompt keywords: ", prompt_keywords)
+
+        extracted_texts = [
+            normalize_text(guess.group(1))
+            if (guess := match_text.search(r)) is not None else None
+            for r in responses
+        ]
+
+        for text in extracted_texts:
+            if text is None:
+                scores.append(len(prompt_keywords) * -1)
+            else:
+                scores.append(sum(1 for key in prompt_keywords if key.lower() in text.lower()))
+
     return scores
 
 ### TODO: balance right completion score and right answer score, getting the right answer is a lot more diffucult so should deserve a lot higher score

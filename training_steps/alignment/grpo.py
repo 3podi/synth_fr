@@ -12,6 +12,21 @@ def main(cfg):
     Args:
         cfg: The configuration for the training.
     """
+    
+    wandb_config = OmegaConf.to_container(
+        cfg,
+        resolve=True,
+        throw_on_missing=True,
+    )
+    wandb.init(
+        project="synth-kg-grpo",
+        tags=cfg.tags,
+        config=wandb_config,
+        job_type="training",
+        group=cfg.group_id,
+        settings=wandb.Settings(init_timeout=100)
+    )
+    
     max_seq_length = 2048 # Can increase for longer reasoning traces
     lora_rank = 64 # Larger rank = smarter, but slower
 
@@ -21,7 +36,7 @@ def main(cfg):
         load_in_4bit = False, # False for LoRA 16bit
         fast_inference = True, # Enable vLLM fast inference
         max_lora_rank = lora_rank,
-        gpu_memory_utilization = 0.7, # Reduce if out of memory
+        gpu_memory_utilization = 0.9, # Reduce if out of memory
     )
 
     model = FastLanguageModel.get_peft_model(
@@ -50,7 +65,7 @@ def main(cfg):
         gradient_accumulation_steps = 4, # Increase to 4 for smoother training
         num_generations = 8, # Decrease if out of memory
         max_prompt_length = 256, #### prompt gets truncated from left
-        max_completion_length = 200, ### max length of the completion, should set based on number of tokens in reports (or the length of reports i want)
+        max_completion_length = 2048, ### max length of the completion, should set based on number of tokens in reports (or the length of reports i want)
         # num_train_epochs = 1, # Set to 1 for a full training run
         max_steps = 250,
         save_steps = 250,

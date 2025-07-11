@@ -148,6 +148,10 @@ def generate_grpo_dataset(input_path: str, output_dir: str, dictionary_path: str
     output_path = os.path.join(output_dir, "grpo_dataset.parquet")
     df.to_parquet(output_path)
     
+    output_path = os.path.join(output_dir, "code2int.pkl")
+    with open(output_path, 'wb') as f:
+        pickle.dump(my_dict, f)
+    
 def generate_grpo_dataset_random(input_path: str, output_dir: str, dictionary_path: str, seed: int = 42):
     """
     Generate RANDOM grpo dataset with at least 2 coloumns 'keywords' and 'solution'.
@@ -213,6 +217,10 @@ def generate_grpo_dataset_random(input_path: str, output_dir: str, dictionary_pa
     os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, "grpo_random_dataset.parquet")
     df.to_parquet(output_path)
+    
+    output_path = os.path.join(output_dir, "code2int.pkl")
+    with open(output_path, 'wb') as f:
+        pickle.dump(my_dict, f)
     
 if __name__ == "__main__":
     
