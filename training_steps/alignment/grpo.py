@@ -2,7 +2,7 @@ from unsloth import FastLanguageModel, is_bfloat16_supported
 import torch
 from trl import GRPOConfig, GRPOTrainer
 import hydra
-from utils_grpo import format_grpo2, reward_match_format_exactly, reward_f1, reward_no_repeat, reward_matching_keywords2
+from utils_grpo import format_grpo2, reward_match_format_exactly, reward_f1, reward_no_repeat, reward_matching_keywords2, ScoringModelRewardFunction
 from omegaconf import DictConfig, ListConfig, OmegaConf
 import wandb
 from datasets import Dataset
@@ -93,14 +93,18 @@ def main(cfg):
     
     #### REWARD ####
     
+    model = SentenceTransformer("FremyCompany/BioLORD-2023-M")
+    similarity_reward = ScoringModelRewardFunction(sts_model=model)
+    
     trainer = GRPOTrainer(
         model = model,
         processing_class = tokenizer,
         reward_funcs = [
-            reward_match_format_exactly, 
-            reward_f1, 
-            reward_no_repeat, 
-            reward_matching_keywords
+            #reward_match_format_exactly, 
+            #reward_f1, 
+            #reward_no_repeat, 
+            similarity_reward,
+            reward_matching_keywords2
         ],
         args = training_args,
         train_dataset = train_dataset,

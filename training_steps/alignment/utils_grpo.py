@@ -203,7 +203,7 @@ def reward_matching_keywords2(prompts, completions, **kwargs):
 ### TODO: answer length reward, do i need to tokenize again? 
 
 class ScoringModelRewardFunction:
-    def __init__(self, sts_model, reference_data_path):
+    def __init__(self, sts_model, reference_data_path=None):
         self.sts_model = sts_model
         self.sts_model.eval()
         for param in self.sts_model.parameters():
@@ -216,14 +216,14 @@ class ScoringModelRewardFunction:
         # Use the model to compute something
         scores = []
         responses = [completion[0]["content"] for completion in completions]
-        scores.extend(self.compute_similarities(self.reference_data,responses))
+        scores.extend(self.compute_similarities(responses))
         return scores    
     
-    def compute_similarities(self, reference_data, generated_data):
+    def compute_similarities(self, generated_data):
         
         all_chunks_ref = []
 
-        for idx, text in enumerate(reference_data):
+        for idx, text in enumerate(self.reference_data):
             chunks = self.split_into_chunks(text, max_length=514)
             all_chunks_ref.extend(chunks)
             
