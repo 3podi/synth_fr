@@ -2,7 +2,7 @@ from unsloth import FastLanguageModel, is_bfloat16_supported
 import torch
 from trl import GRPOConfig, GRPOTrainer
 import hydra
-from training_steps.alignment.utils_grpo import format_grpo, reward_match_format_exactly, reward_f1, reward_no_repeat, reward_matching_keywords
+from utils_grpo import format_grpo2, reward_match_format_exactly, reward_f1, reward_no_repeat, reward_matching_keywords2
 from omegaconf import DictConfig, ListConfig, OmegaConf
 import wandb
 from datasets import Dataset
@@ -38,7 +38,7 @@ def main(cfg):
         load_in_4bit = False, # False for LoRA 16bit
         fast_inference = True, # Enable vLLM fast inference
         max_lora_rank = lora_rank,
-        gpu_memory_utilization = 0.9, # Reduce if out of memory
+        gpu_memory_utilization = 0.7, # Reduce if out of memory
     )
 
     model = FastLanguageModel.get_peft_model(
@@ -65,7 +65,7 @@ def main(cfg):
         logging_steps = 1,
         per_device_train_batch_size = 1,
         gradient_accumulation_steps = 4, # Increase to 4 for smoother training
-        num_generations = 8, # Decrease if out of memory
+        num_generations = 6, # Decrease if out of memory
         max_prompt_length = 256, #### prompt gets truncated from left
         max_completion_length = 2048, ### max length of the completion, should set based on number of tokens in reports (or the length of reports i want)
         # num_train_epochs = 1, # Set to 1 for a full training run

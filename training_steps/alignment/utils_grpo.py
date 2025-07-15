@@ -1,9 +1,11 @@
-import re
 from collections import Counter
-
 from typing import List
 import unicodedata
 import re
+import string
+
+import torch
+from transformers import AutoTokenizer
 
 reasoning_start = "<réfléchir>"
 reasoning_end = "</réfléchir>"
@@ -11,6 +13,8 @@ solution_start = "<SOLUTION>"
 solution_end = "</SOLUTION>"
 
 SYSTEM_PROMPT = f"""Vous êtes un médecin hautement spécialisé. Votre tâche consiste à rédiger un rapport d'hospitalisation fictif complet et réaliste. Le document doit présenter une évolution clinique cohérente avec une terminologie médicale précise, tout en respectant scrupuleusement la séquence imposée des mots-clés. Retournez uniquement le rapport entre {reasoning_start} et {reasoning_end}. Donnez ensuite la séquence des codes icd-10 associés à le rapport sous la forme d'une séquence de nombres entiers et placez-les entre  {solution_start} et  {solution_end}."""
+
+SYSTEM_PROMPT2 = f"""Vous êtes un médecin hautement spécialisé. Votre tâche consiste à rédiger un rapport d'hospitalisation fictif complet et réaliste. Le document doit présenter une évolution clinique cohérente avec une terminologie médicale précise, tout en respectant scrupuleusement la séquence imposée des mots-clés. """
 
 def remove_accents(text):
     """Remove accents and special characters from Unicode text."""
@@ -51,6 +55,16 @@ def format_grpo(example):
         "answer": example["solution"],
     }
 
+def format_grpo2(example):
+    
+    return {
+        "prompt" : [
+        {"role": "system", "content": SYSTEM_PROMPT2},
+        {"role": "user",   "content": example["keywords"]},
+        ],
+        "answer": "",
+    }
+
 # Optional EOS token after </SOLUTION>
 #solution_end_regex = r"</SOLUTION>\s*(?:" + re.escape(tokenizer.eos_token) + ")?"
 solution_end_regex = r"</SOLUTION>"
@@ -64,7 +78,7 @@ match_format = re.compile(
     rf"({integer_seq_pattern})"                   # Capture only integer sequence
     rf"{solution_end_regex}",                      # Match </SOLUTION> + optional EOS
     #rf"\s*$",                                     # Optional trailing whitespace till end of string
-    flags=re.MULTILINE | re.DO#TALL
+    flags=re.MULTILINE | re.DOTALL
 )
 
 match_text = re.compile(
@@ -144,12 +158,12 @@ def reward_matching_keywords(prompts, completions, **kwargs):
         question = prompt[-1]["content"]  # Get the prompt for this sample
         responses = [completion["content"] for completion in response_group]
 
-        prompt_keywords = question.split('</SOLUTION>.')[1].split(",")
+        prompt_keywords = question.split(",")
         prompt_keywords = [kw.strip() for kw in prompt_keywords]
         print("Found those prompt keywords: ", prompt_keywords)
 
         extracted_texts = [
-            normalize_text(guess.group(1))
+            guess.group(1)
             if (guess := match_text.search(r)) is not None else None
             for r in responses
         ]
@@ -159,9 +173,99 @@ def reward_matching_keywords(prompts, completions, **kwargs):
                 #scores.append(len(prompt_keywords) * -1)
                 scores.append(-1)
             else:
-                scores.append(sum(1 for key in prompt_keywords if key.lower() in text.lower())/len(prompt_keywords))
+                scores.append(sum(1 for key in prompt_keywords if normalize_text(key) in normalize_text(text))/len(prompt_keywords))
+
+    return scores
+
+def reward_matching_keywords2(prompts, completions, **kwargs):
+    scores = []
+    
+    print('CO?PLETIONS: ', completions)
+
+    for prompt, response_group in zip(prompts, completions):
+        question = prompt[-1]["content"]  # Get the prompt for this sample
+        responses = [completion["content"] for completion in response_group]
+
+        prompt_keywords = question.split(",")
+        prompt_keywords = [kw.strip() for kw in prompt_keywords]
+        print("Found those prompt keywords: ", prompt_keywords)
+
+        for text in responses:
+            if text is None:
+                #scores.append(len(prompt_keywords) * -1)
+                scores.append(-1)
+            else:
+                scores.append(sum(1 for key in prompt_keywords if normalize_text(key) in normalize_text(text))/len(prompt_keywords))
 
     return scores
 
 ### TODO: balance right completion score and right answer score, getting the right answer is a lot more diffucult so should deserve a lot higher score
 ### TODO: answer length reward, do i need to tokenize again? 
+
+class ScoringModelRewardFunction:
+    def __init__(self, sts_model, reference_data_path):
+        self.sts_model = sts_model
+        self.sts_model.eval()
+        for param in self.sts_model.parameters():
+            param.requires_grad = False
+        self.tokenizer = AutoTokenizer.from_pretrained(self.sts_model._first_module().auto_model.config._name_or_path)
+        self.reference_data = pd.read_parquet(f"datasets/health/grpo/public_reference_grpo.parquet")
+        self.reference_data = self.reference_data["response"].tolist()
+
+    def __call__(self, completions, **kwargs):
+        # Use the model to compute something
+        scores = []
+        responses = [completion[0]["content"] for completion in completions]
+        scores.extend(self.compute_similarities(self.reference_data,responses))
+        return scores    
+    
+    def compute_similarities(self, reference_data, generated_data):
+        
+        all_chunks_ref = []
+
+        for idx, text in enumerate(reference_data):
+            chunks = self.split_into_chunks(text, max_length=514)
+            all_chunks_ref.extend(chunks)
+            
+        all_chunks = []
+        chunk_indices = []  # Track which chunks belong to which text
+
+        for idx, text in enumerate(generated_data):
+            chunks = self.split_into_chunks(text, tokenizer, max_length=514)
+            all_chunks.extend(chunks)
+            chunk_indices.extend([idx] * len(chunks))
+
+        with torch.no_grad():
+            embeddings1 = self.sts_model.encode(all_chunks_ref, batch_size=32 convert_to_tensor=True)
+            embeddings2 = self.sts_model.encode(all_chunks, batch_size=32, convert_to_tensor=True)
+                
+
+        final_embeddings = []
+        num_texts = len(generated_data)
+
+        for idx in range(num_texts):
+            # Select embeddings for current text
+            mask = torch.tensor([i == idx for i in chunk_indices])
+            text_chunk_embeddings = embeddings2[mask]
+
+            # Aggregate embeddings (mean pooling)
+            aggregated_embedding = text_chunk_embeddings.mean(dim=0)
+            final_embeddings.append(aggregated_embedding)
+            
+        final_embeddings = torch.stack(final_embeddings)  # Shape: [num_texts, embedding_dim]
+
+        # shape: [len(reference_data), len(generated_data)]
+        similarity_matrix = cos_sim(embeddings1, final_embeddings)
+
+        # Average across reference data for each generated sample:
+        mean_scores_per_generated = similarity_matrix.mean(dim=0)
+        
+        return mean_scores_per_generated.tolist()  # Return as list of floats
+    
+    def split_into_chunks(self, text, max_length=514):
+        tokens = self.tokenizer.tokenize(text)
+        chunks = []
+        for i in range(0, len(tokens), max_length):
+            chunk = tokens[i:i+max_length]
+            chunks.append(tokenizer.convert_tokens_to_string(chunk))
+        return chunks
