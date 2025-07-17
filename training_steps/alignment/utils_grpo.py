@@ -6,6 +6,9 @@ import string
 
 import torch
 from transformers import AutoTokenizer
+from sentence_transformers.util import cos_sim
+from sentence_transformers import SentenceTransformer
+import pandas as pd
 
 reasoning_start = "<réfléchir>"
 reasoning_end = "</réfléchir>"
@@ -231,12 +234,12 @@ class ScoringModelRewardFunction:
         chunk_indices = []  # Track which chunks belong to which text
 
         for idx, text in enumerate(generated_data):
-            chunks = self.split_into_chunks(text, tokenizer, max_length=514)
+            chunks = self.split_into_chunks(text, max_length=514)
             all_chunks.extend(chunks)
             chunk_indices.extend([idx] * len(chunks))
 
         with torch.no_grad():
-            embeddings1 = self.sts_model.encode(all_chunks_ref, batch_size=32 convert_to_tensor=True)
+            embeddings1 = self.sts_model.encode(all_chunks_ref, batch_size=32, convert_to_tensor=True)
             embeddings2 = self.sts_model.encode(all_chunks, batch_size=32, convert_to_tensor=True)
                 
 
@@ -267,5 +270,5 @@ class ScoringModelRewardFunction:
         chunks = []
         for i in range(0, len(tokens), max_length):
             chunk = tokens[i:i+max_length]
-            chunks.append(tokenizer.convert_tokens_to_string(chunk))
+            chunks.append(self.tokenizer.convert_tokens_to_string(chunk))
         return chunks

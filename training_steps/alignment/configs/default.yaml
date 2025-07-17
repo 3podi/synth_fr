@@ -8,8 +8,8 @@ dpo_config:
   learning_rate: 5e-6
   logging_steps: 10
   weight_decay: 1e-7
-  max_length: 512
-  num_train_epochs: 1
+  max_length: 1024 #512
+  num_train_epochs: 5
   output_dir: "models/dpo/"
   per_device_train_batch_size: 8
   gradient_accumulation_steps: 1
@@ -35,7 +35,7 @@ model_config:
   model_name_or_path: meta-llama/llama-2-7b-hf
 
 dataset: ???
-dataset_size: 90
+dataset_size: 800
 tags: ???
 iteration: ???
 adapters_paths: ???

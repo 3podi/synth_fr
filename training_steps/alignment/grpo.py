@@ -7,6 +7,9 @@ from omegaconf import DictConfig, ListConfig, OmegaConf
 import wandb
 from datasets import Dataset
 
+from sentence_transformers import SentenceTransformer
+
+
 @hydra.main(version_base=None, config_path="./configs", config_name="grpo")
 def main(cfg):
     """Train the model using the reinforcement learning algorithm GRPO.
@@ -81,7 +84,7 @@ def main(cfg):
     dataset = Dataset.from_parquet(cfg.dataset)
     max_size = min(cfg.dataset_size, len(dataset))
     dataset = dataset.select(range(max_size))
-    dataset = dataset.map(format_grpo)
+    dataset = dataset.map(format_grpo2)
     
     split_dataset = dataset.train_test_split(test_size=0.1, seed=42)
     del dataset
@@ -93,8 +96,8 @@ def main(cfg):
     
     #### REWARD ####
     
-    model = SentenceTransformer("FremyCompany/BioLORD-2023-M")
-    similarity_reward = ScoringModelRewardFunction(sts_model=model)
+    sts_model = SentenceTransformer("FremyCompany/BioLORD-2023-M")
+    similarity_reward = ScoringModelRewardFunction(sts_model=sts_model)
     
     trainer = GRPOTrainer(
         model = model,
