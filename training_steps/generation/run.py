@@ -25,7 +25,7 @@ def parse_arguments():
     parser.add_argument(
         "--num_sequences",
         type=int,
-        default=5,
+        default=4,
         help="Number of different sequences to generate per prompt",
     )
     parser.add_argument(
@@ -76,7 +76,7 @@ def main():
     # we use a contextual path only because we deploy the script via skypilot
     print("Reading parquet")
     df = pd.read_parquet(args.dataset)
-    df = df.sample(n=args.num_prompts, random_state=42)
+    #df = df.sample(n=args.num_prompts, random_state=42)
     # Extract the specific column
     prompts = df["instruction"]
 
@@ -92,7 +92,7 @@ def main():
 
     # Create output dataframe with multiple response columns
     output_data = {"instruction": prompts}
-    for i in range(args.num_sequences - 1):
+    for i in range(args.num_sequences):
         output_data[f"response_{i+1}"] = responses[i]
 
     # Create output dataframe and save
