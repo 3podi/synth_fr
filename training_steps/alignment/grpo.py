@@ -2,7 +2,7 @@ from unsloth import FastLanguageModel, is_bfloat16_supported
 import torch
 from trl import GRPOConfig, GRPOTrainer
 import hydra
-from utils_grpo import format_grpo2, reward_match_format_exactly, reward_f1, reward_no_repeat, reward_matching_keywords2, ScoringModelRewardFunction
+from utils_grpo import format_grpo2, reward_match_format_exactly, reward_f1, reward_no_repeat, reward_matching_keywords2, ScoringModelRewardFunction, ScoreModelAPI
 from omegaconf import DictConfig, ListConfig, OmegaConf
 import wandb
 from datasets import Dataset
@@ -36,25 +36,35 @@ def main(cfg):
     lora_rank = 64 # Larger rank = smarter, but slower
 
     model, tokenizer = FastLanguageModel.from_pretrained(
-        model_name = "Qwen/Qwen2.5-3B-Instruct",
+        #model_name = "Qwen/Qwen2.5-3B-Instruct",
+        model_name = cfg.model_name,
         max_seq_length = max_seq_length, #shouldnt be important if i aim at generating shorter reports
         load_in_4bit = False, # False for LoRA 16bit
         fast_inference = True, # Enable vLLM fast inference
         max_lora_rank = lora_rank,
         gpu_memory_utilization = 0.7, # Reduce if out of memory
     )
-
-    model = FastLanguageModel.get_peft_model(
-        model,
-        r = lora_rank, # Choose any number > 0 ! Suggested 8, 16, 32, 64, 128
-        target_modules = [
-            "q_proj", "k_proj", "v_proj", "o_proj",
-            "gate_proj", "up_proj", "down_proj",
-        ], # Remove QKVO if out of memory
-        lora_alpha = lora_rank,
-        use_gradient_checkpointing = "unsloth", # Enable long context finetuning
-        random_state = 3407,
-    )
+    
+    if cfg.adapter_path is None or len(cfg.adapter_path) == 0:
+    
+        model = FastLanguageModel.get_peft_model(
+            model,
+            r = lora_rank, # Choose any number > 0 ! Suggested 8, 16, 32, 64, 128
+            target_modules = [
+                "q_proj", "k_proj", "v_proj", "o_proj",
+                "gate_proj", "up_proj", "down_proj",
+            ], # Remove QKVO if out of memory
+            lora_alpha = lora_rank,
+            use_gradient_checkpointing = "unsloth", # Enable long context finetuning
+            random_state = 3407,
+        )
+    else:
+        
+        if isinstance(cfg.adapter_path, str):
+            cfg.adapter_path = [cfg.adapter_path]
+        
+        for path in cfg.adapter_path:
+            model.load_adapter(path)
     
     training_args = GRPOConfig(
         use_vllm = True, # use vLLM for fast inference!
@@ -96,8 +106,8 @@ def main(cfg):
     
     #### REWARD ####
     
-    sts_model = SentenceTransformer("FremyCompany/BioLORD-2023-M")
-    similarity_reward = ScoringModelRewardFunction(sts_model=sts_model)
+    #sts_model = SentenceTransformer("FremyCompany/BioLORD-2023-M")
+    educational_score_reward = ScoringModelRewardFunction(sts_model=cfg.sts_model)
     
     trainer = GRPOTrainer(
         model = model,
@@ -106,7 +116,7 @@ def main(cfg):
             #reward_match_format_exactly, 
             #reward_f1, 
             #reward_no_repeat, 
-            similarity_reward,
+            educational_score_reward,
             reward_matching_keywords2
         ],
         args = training_args,

@@ -257,7 +257,7 @@ class ScoringModelRewardFunction:
             
         final_embeddings = torch.stack(final_embeddings)  # Shape: [num_texts, embedding_dim]
 
-        # shape: [len(reference_data), len(generated_data)]
+        # shape: [len(reference_data_chunks), len(generated_data)]
         similarity_matrix = cos_sim(embeddings1, final_embeddings)
 
         # Average across reference data for each generated sample:
@@ -272,3 +272,54 @@ class ScoringModelRewardFunction:
             chunk = tokens[i:i+max_length]
             chunks.append(self.tokenizer.convert_tokens_to_string(chunk))
         return chunks
+    
+    
+    
+class ScoringModelAPI:
+    def __init__(self, sts_model):
+        self.model = sts_model
+        self.api_key = os.environ['MISTRAL_API_KEY']
+        self.client = Mistral(
+            api_key=api_key,
+        )
+        
+        prompt_path = "training_steps/score/prompt_educational_scores2.txt"
+        with open(prompt_path, "r") as f:
+            self.prompt_template = f.read().strip()
+        
+    def __call__(self, completions, **kwargs):
+        # Use the model to compute something
+        scores = []
+        
+        responses = [completion[0]["content"] for completion in completions]
+        messages = [{"role":"user", "content": self.prompt_template.replace('{INSTRUCTION}', resp)} for resp in responses]
+        
+        chat_response = client.chat.complete(
+                            model=model,
+                            messages=messages
+                        )
+        chat_response = [resp.choices[0].message.content for resp in chat_response]
+        scores.extend(self.extract_scores(chat_response))
+        return scores    
+    
+    def extract_scores(self, chat_response):
+        
+        scores = []
+
+        for output in chat_response:
+            full_response = output.strip()
+
+            # Try to extract JSON object from the response
+            try:
+                # Find JSON-like structure
+                json_match = re.search(r'\{\s*"score"\s*:\s*([0-1](?:\.\d+)?)\s*,?\s*\}', full_response)
+                if json_match:
+                    score = float(json_match.group(1))
+                else:
+                    score = 0.0  # fallback if JSON or score not found
+            except Exception as e:
+                print(f"Failed to parse score in response: {e}")
+                score = 0.0
+
+            scores.append(score)
+        return scores

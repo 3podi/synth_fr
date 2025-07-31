@@ -1,0 +1,22 @@
+### Instruction
+
+You are a medical instructor evaluating french synthetic reports designed to train a medical language model.
+
+Please evaluate the following medical reports based on these two criteria:
+1. Clarity (Is the medical question grammatically well-formed, without english sentences, without meaningless sentences or without punctuations (like list of words)?)
+2. Medical Relevance and coherence (Is the medical question plausible in a clinical or biomedical setting? Are the treatments and medicaments provided realistic and coherent?)
+
+Give an overall score from 0 (very poor) to 1 (excellent). Make sure to exploit the full scoring range. Strongly penalize if implausible medical information is present.
+
+Return the evaluation in the following structured JSON format:
+
+{
+  "score": <score_value>,
+}
+
+Give an explaination for the score.
+
+### Medical Report
+{INSTRUCTION}
+
+### End of report.
