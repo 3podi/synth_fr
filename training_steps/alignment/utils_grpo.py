@@ -283,23 +283,61 @@ class ScoringModelAPI:
             api_key=api_key,
         )
         
-        prompt_path = "training_steps/score/prompt_educational_scores2.txt"
-        with open(prompt_path, "r") as f:
-            self.prompt_template = f.read().strip()
+        #prompt_path = "training_steps/score/prompt_educational_scores2.txt"
+        #with open(prompt_path, "r") as f:
+        #    self.prompt_template = f.read().strip()
         
-    def __call__(self, completions, **kwargs):
+        self.prompt_template = """### Instruction
+
+        You are a medical instructor evaluating french synthetic reports designed to train a medical language model.
+
+        Please evaluate the following medical reports based on these two criteria:
+        1. Clarity (Is the medical question grammatically well-formed, without english sentences, without meaningless sentences or without punctuations (like list of words)?)
+        2. Medical Relevance and coherence (Is the medical question plausible in a clinical or biomedical setting? Are the treatments and medicaments provided realistic and coherent?)
+
+        Give an overall score from 0 (very poor) to 1 (excellent). Make sure to exploit the full scoring range. Strongly penalize if implausible medical information is present.
+
+        Return ONLY the evaluation in the following structured JSON format:
+
+        {
+          "score": <score_value>,
+        }
+
+        ### Medical Report
+        {INSTRUCTION}
+
+        ### End of report.
+        """
+        
+    def __call__old(self, completions, **kwargs):
         # Use the model to compute something
         scores = []
         
         responses = [completion[0]["content"] for completion in completions]
         messages = [{"role":"user", "content": self.prompt_template.replace('{INSTRUCTION}', resp)} for resp in responses]
         
-        chat_response = client.chat.complete(
-                            model=model,
+        chat_response = self.client.chat.complete(
+                            model=self.model,
                             messages=messages
                         )
         chat_response = [resp.choices[0].message.content for resp in chat_response]
         scores.extend(self.extract_scores(chat_response))
+        return scores   
+    
+    def __call__(self, completions, **kwargs):
+        # Use the API to compute score
+        scores = []
+        
+        responses = [completion[0]["content"] for completion in completions]
+        for resp in responses
+            message = [{"role":"user", "content": self.prompt_template.replace('{INSTRUCTION}', resp)}]
+            
+            chat_response = self.client.chat.complete(
+                                model=self.model,
+                                messages=message
+                            )
+            output = chat_response.choices[0].message.content
+            scores.extend(self.extract_scores([output]))
         return scores    
     
     def extract_scores(self, chat_response):

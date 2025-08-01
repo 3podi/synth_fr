@@ -107,7 +107,7 @@ def main(cfg):
     #### REWARD ####
     
     #sts_model = SentenceTransformer("FremyCompany/BioLORD-2023-M")
-    educational_score_reward = ScoringModelRewardFunction(sts_model=cfg.sts_model)
+    educational_score_reward = ScoringModelAPI(sts_model=cfg.sts_model)
     
     trainer = GRPOTrainer(
         model = model,
