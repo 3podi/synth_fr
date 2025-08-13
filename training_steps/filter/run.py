@@ -47,9 +47,10 @@ def preprocess_parquet(input_file):
                 "similarity_score": getattr(row, f"similarity_score_{candidate_idx}"),
                 #"preference_score": row[f"preference_score_{candidate_idx}"],
                 #"is_medical": row[f"is_medical_{candidate_idx}"],
-                #"educational_score": row[f"educational_score_{candidate_idx}"],
+                "educational_score": getattr(row, f"educational_score_{candidate_idx}"),
                 #"educational_response": row[f"educational_response_{candidate_idx}"],
                 "bleu_score": getattr(row, f"bleu_score_{candidate_idx}"),
+                "cumulative_score": getattr(row, f"cumulative_score_{candidate_idx}")
             }
 
             expanded_rows.append(new_row)
@@ -172,10 +173,12 @@ def create_dpo_dataset(sorted_df, output_prefix, sort_key):
             "rejected_similarity_score": worst_example["similarity_score"],
             #"chosen_preference_score": best_example["preference_score"],
             #"rejected_preference_score": worst_example["preference_score"],
-            #"chosen_educational_score": best_example["educational_score"],
-            #"rejected_educational_score": worst_example["educational_score"],
+            "chosen_educational_score": best_example["educational_score"],
+            "rejected_educational_score": worst_example["educational_score"],
             "chosen_bleu_score": best_example["bleu_score"],
             "rejected_bleu_score": worst_example["bleu_score"],
+            "chosen_cumulative_score": best_example["cumulative_score"],
+            "rejected_cumulative_score": worst_example["cumulative_score"],
             #"chosen_is_medical": best_example["is_medical"],
             #"rejected_is_medical": worst_example["is_medical"],
         }
@@ -230,9 +233,10 @@ def process_data(input_file):
     sorting_methods = {
         #"mes": ["is_medical", "educational_score", "similarity_score"],
         #"ms": ["is_medical", "similarity_score"],
-        "s": ["similarity_score"],
+        #"s": ["similarity_score"],
         #"e": ["educational_score"],
         #"se": ["similarity_score", "educational_score"],
+        "avg": ["cumulative_score"]
     }
 
     # Process each sorting method

@@ -4,7 +4,7 @@ import random
 
 import pandas as pd
 from vllm import LLM, SamplingParams
-
+from typing import List
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -45,10 +45,22 @@ def parse_arguments():
 
 def generate_responses(model, prompts, num_sequences):
     all_responses = []
-
-    for _ in range(num_sequences):
+    all_temperature = []
+    all_top_p = []
+    all_top_k = []
+    
+    tokenizer = model.get_tokenizer()
+    stop_token_ids = tokenizer.eos_token_id
+    if not isinstance(stop_token_ids, List):
+        stop_token_ids = [stop_token_ids]
+    print('Using those stop tokens id: ', stop_token_ids)
+        
+    for idx in range(num_sequences):
         # Randomly select parameters within a desired range
-        temperature = random.uniform(0.7, 0.9)
+        if idx == 0:
+            temperature = 0.6
+        else:
+            temperature = random.uniform(0.6, 0.9)
         top_p = random.uniform(0.8, 0.95)
         top_k = random.choice([40, 50, 60])
 
@@ -58,7 +70,8 @@ def generate_responses(model, prompts, num_sequences):
             top_k=top_k,
             max_tokens=2048,
             seed=random.randint(0, 2**32 - 1),
-            stop=["</s>"],
+            #stop=["</s>"],
+            stop_token_ids = stop_token_ids,
             presence_penalty=1.0,
             frequency_penalty=1.2,
             n=1,
@@ -66,8 +79,11 @@ def generate_responses(model, prompts, num_sequences):
         modified_prompt = prompts  # or apply a function that randomly perturbs the prompt
         response = model.generate(modified_prompt, sampling_params=sampling_params)
         all_responses.append([output.outputs[0].text for output in response])
+        all_temperature.append([temperature for output in response])
+        all_top_p.append([top_p for output in response])
+        all_top_k.append([top_k for output in response])
 
-    return all_responses
+    return all_responses, all_temperature, all_top_p, all_top_k
 
 
 def main():
@@ -85,15 +101,19 @@ def main():
         model=args.model,
         tensor_parallel_size=args.tp,
         pipeline_parallel_size=args.pp,
+        enable_chunked_prefill=False,
     )
     # Generate multiple responses per prompt
     print("Generating responses")
-    responses = generate_responses(llm, prompts, num_sequences=args.num_sequences)
+    responses, temperatures, top_p, top_k = generate_responses(llm, prompts, num_sequences=args.num_sequences)
 
     # Create output dataframe with multiple response columns
     output_data = {"instruction": prompts}
     for i in range(args.num_sequences):
         output_data[f"response_{i+1}"] = responses[i]
+        output_data[f"temperature_{i+1}"] = temperatures[i]
+        output_data[f"top_p_{i+1}"] = top_p[i]
+        output_data[f"top_k_{i+1}"] = top_k[i]
 
     # Create output dataframe and save
     df_output = pd.DataFrame(output_data)
