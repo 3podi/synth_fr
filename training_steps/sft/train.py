@@ -146,7 +146,7 @@ def main(cfg: DictConfig):
     dataset = dataset.map(format_and_tokenize2, batched=False)
     
     dataset = dataset.map(
-        lambda x: chunk_tokens_with_padding(x, tokenizer.pad_token_id),
+        lambda x: chunk_tokens_with_padding(x, tokenizer.pad_token_id, chunk_size=cfg.sft_config.max_seq_length, stride=512),
         remove_columns=dataset.column_names,
         batched=False,
     ).flatten()  
