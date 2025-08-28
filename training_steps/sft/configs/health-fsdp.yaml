@@ -1,0 +1,22 @@
+defaults:
+  - default.yaml
+
+sft_config:
+  num_train_epochs: 10
+  weight_decay: 0.01
+  eval_strategy: "epoch"
+  #eval_steps: 1000
+  #save_steps: 1000
+  per_device_eval_batch_size: 16
+  load_best_model_at_end: True
+  metric_for_best_model: "eval_loss"
+  lr_scheduler_type: "cosine"
+  # FSDP-specific flags
+  fsdp: "full_shard auto_wrap"
+  fsdp_transformer_layer_cls_to_wrap: "LlamaDecoderLayer"
+  
+
+#dataset: datasets/health/model=xz97-AlpaCare-llama2-13b_t=0.7_size=60000/public_seed.parquet
+dataset: datasets/health/sft/sft_dataset.parquet
+tags: [sft, health]
+adapters_paths: lora/

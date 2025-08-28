@@ -34,7 +34,7 @@ def main():
 
 def merge_adapters(model_name, adapter_paths, output_path):
     print('Loading pretrained model: ', model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name)
+    model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto")
     
     print("Got pretrained model.")
     print("Adapters paths in function: ", adapter_paths)

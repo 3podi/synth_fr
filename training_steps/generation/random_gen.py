@@ -13,6 +13,7 @@ import string
 from tqdm import tqdm
 
 from vllm import LLM, SamplingParams
+import csv
 
 PROMPT = """### Instruction
 Vous agissez en tant qu'IA médicale spécialisée. Votre tâche consiste à rédiger un rapport d'hospitalisation fictif complet et réaliste. Le document doit présenter une évolution clinique cohérente avec une terminologie médicale précise, tout en respectant scrupuleusement la séquence imposée des mots-clés. Retournez uniquement le rapport.
@@ -53,18 +54,30 @@ def normalize_text(text):
 def parse_arguments():
     
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--extracted_keywords_path", type=str, required=True, help="Path to a .csv file that has extracted keywords and ground truth icd-10 codes"
-    )
     
     parser.add_argument(
-        "--list_definitions_path", type=str, required=True,
+        "--csv_path", type=str, required=True,
         help="Path to extract list of codes to use and to generate code2int mapping"
     )
 
     parser.add_argument(
         "--output_path", type=str, required=True,
         help="Path of folder where to save the final parquet"
+    )
+    
+    parser.add_argument(
+        "--max_codes", type=int, default=1,
+        help="Max number of codes to randomly sample for each generation"
+    )
+    
+        parser.add_argument(
+        "--max_kws", type=int, default=1,
+        help="Max number of code definition to keep for each code"
+    )
+        
+        parser.add_argument(
+        "--num_samples", type=int, default=10,
+        help="Number of samples to generate"
     )
 
     return parser.parse_args()
@@ -133,8 +146,8 @@ def invert_norm_keywords(keywords, reverse_norm_dict):
 
     return ", ".join([reverse_norm_dict.get(key, "")[0] for key in keywords]) #If more keys are mapped to the same normalization, take the 1st
 
-    
-def sample_keywords(csv_path: str, num_samples: int = 10, seed: int = 42):
+
+def sample_keywords(csv_path: str, num_samples: int = 10, max_codes: int = 1, max_kws: int = 1, seed: int = 42):
     """
     Generate RANDOM grpo dataset with at least 2 coloumns 'keywords' and 'codes'.
     Keywords column is a list of keywords to use in the prompt.
@@ -156,9 +169,9 @@ def sample_keywords(csv_path: str, num_samples: int = 10, seed: int = 42):
     
     for i in tqdm(range(num_samples)):
         # Randomly sample a number of codes
-        n_codes = random.randint(1, 10)
+        n_codes = random.randint(1, max_codes)
         # Randomly sample a number of keywords
-        N_kws = random.randint(1, 3)
+        N_kws = random.randint(1, max_kws)
     
         sampled_codes = random.sample(all_codes, n_codes)
         
@@ -172,18 +185,21 @@ def sample_keywords(csv_path: str, num_samples: int = 10, seed: int = 42):
             continue
         
         codes.append(" ".join(sampled_codes))
-        keywords.append(" - ".join(sampled_kws))
+        keywords.append(", ".join(sampled_kws))
         number_codes.append(n_codes)
         number_keywords.append(len(sampled_kws))
 
     data = {
         'keywords': keywords,
-        'codes': real_codes,
+        'codes': codes,
         'n_codes': number_codes,
         'n_kws': number_keywords
     }
     df = pd.DataFrame(data)    
     return df
+
+def make_regex():
+    return (r".*(Motif d'hospitalisation).*?(Condition principal d'admission).*?(Antécédent).*?(Mode de vie).*?(Histoire de la maladie).*?(Examen clinique).*?(Examens complémentaires).*?(Évolution pendant l'hospitalisation).*?(Conclusion).*?")
 
 def generate_responses(keywords, model_name: str, tp: int = 1, pp: int = 1):
     
@@ -191,41 +207,37 @@ def generate_responses(keywords, model_name: str, tp: int = 1, pp: int = 1):
     llm = LLM(
         model=model_name,
         tensor_parallel_size=tp,
-        pipeline_parallel_size=args.pp,
+        pipeline_parallel_size=pp,
         #enable_chunked_prefill=True,
+        gpu_memory_utilization=0.95,
+        max_model_len=16384
     )
     print("Generating responses")
     all_responses = []
     
-    tokenizer = llm.get_tokenizer()
-    stop_token_ids = tokenizer.eos_token_id
-    if not isinstance(stop_token_ids, List):
-        stop_token_ids = [stop_token_ids]
-    print('Using those stop tokens id: ', stop_token_ids)
     
     # Default gen configs of the model 
     sampling_params = SamplingParams(
-        temperature=0.4,
-        top_k = 64,
-        top_p = 0.95,
-        gpu_memory_utilization=0.95,
-        max_model_len=5000,
+        temperature=0.2,
+        #top_k = 64,
+        #top_p = 0.95,
         max_tokens=3000,
-        seed=random.randint(0, 2**32 - 1),
+        #seed=random.randint(0, 2**32 - 1),
         #stop=["</s>"],
-        stop_token_ids = stop_token_ids,
-        presence_penalty=1.0,
-        frequency_penalty=1.2,
+        #stop_token_ids = stop_token_ids,
+        #presence_penalty=1.0,
+        #frequency_penalty=1.2,
         n=1,
     )
     
     prompts = [ PROMPT.replace("{keywords}", kws) for kws in keywords]
 
     response = llm.generate(
-        modified_prompt,
-        sampling_params=sampling_params
+        prompts,
+        sampling_params=sampling_params,
+        #guided_options_request=dict(guided_regex=make_regex())
     )
-    all_responses.append([output.outputs[0].text for output in response])
+    all_responses.extend([output.outputs[0].text for output in response])
 
 
     return all_responses
@@ -239,9 +251,10 @@ if __name__ == "__main__":
     os.makedirs(output_dir, exist_ok=True)
 
     df = sample_keywords(
-        input_path=args.extracted_keywords_path,
-        output_dir=output_dir,
-        dictionary_path=args.list_definitions_path
+        csv_path=args.csv_path,
+        num_samples=args.num_samples,
+        max_codes=args.max_codes,
+        max_kws=args.max_kws
     )
     
     responses = generate_responses(

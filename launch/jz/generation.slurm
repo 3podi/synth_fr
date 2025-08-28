@@ -5,7 +5,7 @@
 #SBATCH -c4
 #SBATCH --mem=40000
 #SBATCH -p gpuV100  
-#SBATCH -w bbs-edsg28-p006
+#SBATCH -w bbs-edsg28-p007
 
 #debug
 # Set PATH manually to target the environment's bin directory
@@ -25,8 +25,6 @@ pip --version
 
 # Initialize variables with default values
 DATASET_PATH="default_name"
-#MODEL="meta-llama/llama-2-7b-hf"
-#MODEL="mistralai/Mistral-7B-v0.1"
 ADAPTERS_PATHS="default_path"
 OUTPUT_PATH="default_path"
 
@@ -76,7 +74,8 @@ done
 #MERGE_OUTPUT_PATH=./lora/merge-${MERGE_ID}
 MERGE_OUTPUT_PATH=./lora/merge/${RUN_ID}
 
-CUDA_VISIBLE_DEVICES=0 python training_steps/generation/merge_adapters.py \
+#CUDA_VISIBLE_DEVICES=0 python training_steps/generation/merge_adapters.py \
+python training_steps/generation/merge_adapters.py \
   --model "$MODEL" \
   --adapters "$ADAPTERS_PATHS" \
   --output_path "$MERGE_OUTPUT_PATH"
@@ -85,5 +84,5 @@ python training_steps/generation/run.py --dataset "$DATASET_PATH" \
   --model "$MERGE_OUTPUT_PATH" \
   --output_path "$OUTPUT_PATH" \
   --num_prompts "$N_PROMPTS" \
-  #--tp "$SLURM_GPUS_ON_NODE" \
-  #--pp "$SLURM_NNODES"
+  --tp "$SLURM_GPUS_ON_NODE" \
+  --pp "$SLURM_NNODES"

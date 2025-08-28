@@ -135,13 +135,6 @@ def main(cfg: DictConfig):
 
     dataset = Dataset.from_pandas(pd.read_parquet(cfg.dataset).head(cfg.dataset_size))
     
-    #def rename_columns(example):
-    #    return {
-    #        "prompt": example["instruction"],
-    #        "completion": example["response"],
-    #    }
-    #dataset = dataset.map(rename_columns, remove_columns=dataset.column_names)
-    
     dataset = dataset.map(lambda x: {"text": x["instruction"] + x["response"]})
     dataset = dataset.map(format_and_tokenize2, batched=False)
     
@@ -151,25 +144,7 @@ def main(cfg: DictConfig):
         batched=False,
     ).flatten()  
     
-    #dataset = dataset.map(
-    #    lambda x: x['chunk'],
-    #    remove_columns=dataset.column_names,
-    #    batched=True,
-    #)
-    #dataset = dataset['chunk']
     print('Len dataset: ', len(dataset))
-    
-    #dataset = dataset.map(lambda x: {"n_tokens": len(x['input_ids'])})    
-    #print(dataset['n_tokens'])
-    
-    #sample_index = 0
-    #input_ids = dataset[sample_index]['input_ids']
-    # Decode the input_ids back to text (skip special tokens like padding if needed)
-    #decoded_text = tokenizer.decode(input_ids, skip_special_tokens=True)
-    #print(decoded_text)
-    
-    #dataset = StreamingChunkedDataset(cfg.dataset,cfg.dataset_size,tokenizer)
-
     
     def chunks_generator(original_dataset):
         for example in original_dataset:
@@ -177,11 +152,7 @@ def main(cfg: DictConfig):
                 yield chunk_dict
 
     dataset = Dataset.from_generator(lambda: chunks_generator(dataset))
-    #column_names = list(next(iter(dataset)).keys())
-    #print('aaa: ', column_names)
-    
-    #dataset = dataset.map(lambda x: {"n_tokens": len(x['input_ids'])})
-    #print(dataset["n_tokens"])
+
     split_dataset = dataset.train_test_split(test_size=0.1, seed=42)
     train_dataset = split_dataset['train']
     val_dataset = split_dataset['test']
@@ -213,10 +184,6 @@ def main(cfg: DictConfig):
     #input_ids_batch = first_batch["input_ids"] 
     #decoded_texts = [tokenizer.decode(input_ids, skip_special_tokens=False) for input_ids in input_ids_batch]
     #print(decoded_texts)
-    
-    #column_names = list(next(iter(train_dataloader)).keys())
-    #print('names: ', column_names)
-    #print('is processed: ', 'input_ids' in column_names)
 
     trainer.train()
     trainer.save_model(cfg.sft_config.output_dir)

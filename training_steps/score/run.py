@@ -224,89 +224,7 @@ def parse_arguments() -> argparse.Namespace:
     )
     return parser.parse_args()
 
-
-def filter_medical_content(llm, instructions: List[str]) -> List[bool]:
-    """
-    Filter instructions to identify those related to medicine using AlpaCare LLama model.
-
-    Args:
-        instructions: List of instruction texts to analyze
-
-    Returns:
-        List of boolean values indicating whether each instruction involves medicine
-    """
-    # Initialize vllm with AlpaCare model
-    sampling_params = SamplingParams(temperature=0.0, max_tokens=10)
-
-    # Prepare prompts with the medical filter question
-    prompts = [
-        (
-            f"If you are a doctor, "
-            f"please answer the medical questions based  on the patient’s description."
-            f" Patient: {instruction}  Does my instruction involves medicine?"
-        )
-        for instruction in instructions
-    ]
-
-    # Process all prompts with vllm
-    outputs = llm.generate(prompts, sampling_params)
-
-    # Extract results and determine if medicine-related
-    results = []
-    for output in outputs:
-        response = output.outputs[0].text.strip().lower()
-        # Check if response contains "yes"
-        is_medical = ("y" or "t") in response
-        results.append(is_medical)
-
-    return results
-
-
-def compute_educational_score(llm, responses: List[str]) -> dict:
-    """
-    Compute educational scores for responses using AlpaCare LLama model.
-
-    Args:
-        responses: List of response texts to analyze
-        tp: Number of GPUs to use for inference
-
-    Returns:
-        Dictionary containing two lists: educational_scores and educational_responses
-    """
-    # Read the educational scoring prompt from file
-    prompt_path = "training_steps/score/prompt_educational_scores.txt"
-    with open(prompt_path, "r") as f:
-        prompt_template = f.read().strip()
-
-    # Initialize vllm with AlpaCare model
-    sampling_params = SamplingParams(temperature=0.5, max_tokens=512)
-
-    # Prepare prompts with the educational scoring prompt
-    prompts = [prompt_template.replace("{INSTRUCTION}", response) for response in responses]
-    # Process all prompts with vllm
-    outputs = llm.generate(prompts, sampling_params)
-
-    # Extract results - both the overall score and full response
-    scores = []
-    full_responses = []
-
-    for output in outputs:
-        full_response = output.outputs[0].text.strip()
-        full_responses.append(full_response)
-
-        # Extract overall_score using regex
-        overall_index = full_response.lower().find("overall")
-        score_match = re.search(r"\d{1}", full_response[overall_index:], re.IGNORECASE)
-        if score_match:
-            score = float(score_match.group(0))
-        else:
-            score = 0.0  # Default score if no match found
-
-        scores.append(score)
-
-    return {"educational_scores": scores, "educational_responses": full_responses}
-
-def compute_educational_score2(sts_model, responses: List[str]) -> dict:
+def compute_educational_score(sts_model, tp: int, responses: List[str]) -> dict:
     """
     Compute educational scores for responses using an LLM.
 
@@ -334,7 +252,7 @@ def compute_educational_score2(sts_model, responses: List[str]) -> dict:
         #kv_cache_dtype= 'fp8e4b15', #'fp8_e5m2',
         #enable_prefix_caching=True,
         enforce_eager=True,
-        tensor_parallel_size=1,
+        tensor_parallel_size=tp,
         pipeline_parallel_size=1
     )
 
@@ -448,87 +366,6 @@ def compute_prompt_similarity(sts_model: str, private_responses: List[str], publ
 
     return {"prompt_similarity_scores": scores}
 
-def compute_preference_score(
-    llm, private_responses: List[str], public_responses: List[str], instructions: List[str]
-) -> List[float]:
-    """
-    Compute preference scores between public and private responses using LLama model.
-
-    The algorithm:
-    1. Generate responses with public at position 1, private at position 2
-    2. Generate responses with positions swapped
-    3. Compute win rate, incrementing score when public output is preferred or there's a tie
-
-    Args:
-        private_responses: List of responses from private dataset
-        public_responses: List of responses from public dataset
-        instructions: List of instruction prompts
-        tp: Number of GPUs to use for inference
-
-    Returns:
-        List of preference scores (between 0 and 1) for each pair of responses
-    """
-    # Read the preference scoring prompt from file
-    prompt_path = "training_steps/score/prompt_preferences.txt"
-    with open(prompt_path, "r") as f:
-        prompt_template = f.read().strip()
-
-    sampling_params = SamplingParams(temperature=0.0, max_tokens=100)
-
-    # Prepare both sets of prompts (swapping positions)
-    # First set: public (a), private (b)
-    prompts_1 = [
-        prompt_template.format(
-            instruction=instruction, output_1=public_response, output_2=private_response
-        )
-        for instruction, public_response, private_response in zip(
-            instructions, public_responses, private_responses
-        )
-    ]
-
-    # Second set: private (a), public (b)
-    prompts_2 = [
-        prompt_template.format(
-            instruction=instruction, output_1=private_response, output_2=public_response
-        )
-        for instruction, public_response, private_response in zip(
-            instructions, public_responses, private_responses
-        )
-    ]
-
-    # Generate results for first set
-    outputs_1 = llm.generate(prompts_1, sampling_params)
-
-    # Generate results for second set
-    outputs_2 = llm.generate(prompts_2, sampling_params)
-
-    # Compute preference scores
-    preference_scores = []
-
-    # Process results from first set (public=a, private=b)
-    for output in outputs_1:
-        response = output.outputs[0].text.strip().lower()
-        # Score 1 if output (a) (public) is preferred or if there's a tie
-        if "a" in response or "tie" in response:
-            score_1 = 1.0
-        else:
-            score_1 = 0.0
-        preference_scores.append(score_1)
-
-    # Process results from second set (private=a, public=b)
-    for i, output in enumerate(outputs_2):
-        response = output.outputs[0].text.strip().lower()
-        # Score 1 if output (b) (public) is preferred or if there's a tie
-        if "b" in response or "tie" in response:
-            score_2 = 1.0
-        else:
-            score_2 = 0.0
-
-        # Average the scores from both prompts
-        preference_scores[i] = (preference_scores[i] + score_2) / 2.0
-
-    return preference_scores
-
 
 def compute_bleu_score(references: List[str], candidates: List[str]) -> List[float]:
     """
@@ -591,7 +428,7 @@ def compute_keywords_overlap(seed_keywords, public_responses):
 
 def score_dataset(n, sts_model, private_dataset, public_dataset, tp, model_name):
     # Initialize tokenizer for truncation
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    #tokenizer = AutoTokenizer.from_pretrained(model_name)
     #private_responses = truncate_responses(private_dataset["response"].tolist(), tokenizer)
     private_responses = private_dataset["response"].tolist()
     for i in range(1, n + 1):
@@ -609,21 +446,8 @@ def score_dataset(n, sts_model, private_dataset, public_dataset, tp, model_name)
         #prompt_similarity_results = compute_prompt_similarity(sts_model, private_responses, public_responses)
         #public_dataset[f"prompt_similarity_score_{i}"] = prompt_similarity_results["prompt_similarity_scores"]
 
-        # Compute Llama Preferences
-        #preference_scores = compute_preference_score(
-        #    llm,
-        #    private_responses,
-        #    public_responses,
-        #    public_dataset["instruction"].tolist(),
-        #)
-        #public_dataset[f"preference_score_{i}"] = preference_scores
-
-        # Compute Llama Filter
-        #medical_flags = filter_medical_content(llm, public_responses)
-        #public_dataset[f"is_medical_{i}"] = medical_flags
-
         # Compute Educational Scores
-        educational_results = compute_educational_score2(sts_model, public_responses)
+        educational_results = compute_educational_score(sts_model, tp, public_responses)
         public_dataset[f"educational_score_{i}"] = educational_results["educational_scores"]
         #public_dataset[f"educational_response_{i}"] = educational_results["educational_responses"]
 
@@ -636,7 +460,7 @@ def score_dataset(n, sts_model, private_dataset, public_dataset, tp, model_name)
         keywords_overlap = compute_keywords_overlap(keywords, public_responses)
         public_dataset[f"overlap_keys_{i}"] = keywords_overlap
         
-        #score_keys = [f"overlap_keys_{i}", f"educational_score_{i}", f"prompt_similarity_score_{i}"]
+        # Compute comulative scoreq
         score_keys = [f"overlap_keys_{i}", f"educational_score_{i}", f'similarity_score_{i}']
         public_dataset[f"cumulative_score_{i}"] = public_dataset[score_keys].mean(axis=1)
 

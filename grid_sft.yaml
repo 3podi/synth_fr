@@ -2,23 +2,24 @@
 defaults:
   - _self_
 
-size: 1001
-size_sft: 1001 #can be lower than size if you want sft on less samples
+size: 2766 #99
+size_sft: 2766 #99 #can be lower than size if you want sft on less samples
 size_generation: 800 #number of prompts to use to generate sequences (4 answers for prompt by default)
 step: sft
-group_id: sft_llama2_7b
-sts_model: FremyCompany/BioLORD-2023
+group_id: sft_llama3_8b
+sts_model: Qwen/Qwen2.5-7B-Instruct #microsoft/MediPhi-Instruct #Qwen/Qwen3-8B #google/gemma-2-9b-it #Alibaba-NLP/gte-multilingual-base #FremyCompany/BioLORD-2023
 domain: health
-private_path: datasets/health/model=meta-llama-llama-2-7b-hf_size=1001/private_seed.parquet
+private_path: datasets/health/model=meta-llama-Meta-Llama-3-8B-Instruct_size=2766/private_seed.parquet #datasets/health/model=meta-llama-Llama-3.2-1B-Instruct_size=1001/private_seed.parquet #datasets/health/model=meta-llama-llama-2-7b-hf_size=1001/private_seed.parquet
 tp: 1
-model_name: meta-llama/llama-2-7b-hf
+model_name: meta-llama/Meta-Llama-3-8B-Instruct #meta-llama/Llama-3.2-1B-Instruct #meta-llama/llama-2-7b-hf
 
-sorting: "s"
+sorting: "avg"
 train_steps: "sft"
 
 scripts:
   dpo: launch/jz/dpo.slurm
   sft: launch/jz/sft.slurm
+  sft-multigpu: launch/jz/sft-multigpu.slurm
   kto: launch/jz/kto.slurm
   generation: launch/jz/generation.slurm
   score: launch/jz/score.slurm

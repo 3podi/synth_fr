@@ -5,7 +5,7 @@
 #SBATCH -c4
 #SBATCH --mem=40000
 #SBATCH -p gpuV100
-#SBATCH -w bbs-edsg28-p006
+#SBATCH -w bbs-edsg28-p007
 
 # Initialize variables with default values
 STS_MODEL=""
@@ -40,10 +40,6 @@ while [[ "$#" -gt 0 ]]; do
     GROUP_ID="$2"
     shift
     ;;
-  --SLURM_GPUS_ON_NODE)
-    SLURM_GPUS_ON_NODE="$2"
-    shift
-    ;;
   --MODEL_NAME)
     MODEL_NAME="$2"
     shift
@@ -55,6 +51,11 @@ while [[ "$#" -gt 0 ]]; do
   esac
   shift
 done
+
+#  --SLURM_GPUS_ON_NODE)
+#    SLURM_GPUS_ON_NODE="$2"
+#    shift
+#    ;;
 
 #module purge
 #module load arch/h100
