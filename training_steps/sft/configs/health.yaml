@@ -7,7 +7,7 @@ sft_config:
   eval_strategy: "epoch"
   #eval_steps: 1000
   #save_steps: 1000
-  per_device_eval_batch_size: 64
+  per_device_eval_batch_size: 16
   load_best_model_at_end: True
   metric_for_best_model: "eval_loss"
   lr_scheduler_type: "cosine"
