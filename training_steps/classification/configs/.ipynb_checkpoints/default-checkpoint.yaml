@@ -1,0 +1,43 @@
+model_config:
+  model_name_or_path: "answerdotai/ModernBERT-large"
+  torch_dtype: "bfloat16"
+
+training_arguments:
+  learning_rate: 2e-5
+  num_train_epochs: 5
+  warmup_steps: 500
+  weight_decay: 0.01
+  lr_scheduler_type: "cosine"
+  logging_steps: 10
+  evaluation_strategy: "steps"
+  eval_steps: 500
+  save_steps: 1000
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_loss"
+  greater_is_better: false
+  report_to: "wandb"
+  per_device_train_batch_size: 32
+  per_device_eval_batch_size: 32
+  
+max_seq_length: 512
+
+# Data
+dataset_size: -1  # -1 means use all data
+text_column: "response"  # Column name for input text
+label_column: "code"  # Column name for labels (comma-separated)
+label_filter_percentage: 20
+max_labels_per_sample: 5
+
+# File paths
+dataset: ???  # Path to your parquet dataset
+label_csv_path: "labels.csv"  # Path to CSV with all possible labels
+label_freq_csv_path: "label_frequencies.csv"  # Optional: path to CSV with label frequencies
+
+
+# Label filtering
+label_filter_percentage: 80  # Percentage of most frequent labels to keep
+
+run_id: ???
+tags: ["multilabel", "classification"]
+group_id: "multilabel_group"
+
