@@ -94,7 +94,7 @@ def main():
     df = pd.read_parquet(args.dataset)
     #df = df.sample(n=args.num_prompts, random_state=42)
     # Extract the specific column
-    prompts = df["instruction"]
+    prompts = df["instruction"][:args.num_prompts]
 
     # Initialize the LLM with your chosen model
     llm = LLM(
