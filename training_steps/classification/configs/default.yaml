@@ -31,6 +31,9 @@ max_labels_per_sample: 5
 # File paths
 dataset: ???  # Path to your parquet dataset
 
+# Save model
+save_flag: false
+
 run_id: ???
 tags: ["multilabel", "classification"]
 group_id: "multilabel_group"

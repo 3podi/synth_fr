@@ -1,0 +1,25 @@
+### Instruction
+
+You are a medical instructor evaluating french reports designed to train a medical language model.
+
+Give me the similarity score between TEXT1 and TEXT2.
+Please evaluate the following medical reports based on this criteria:
+1. TEXT2 should have the same medical content of TEXT1.
+
+Give an overall score from 0 (very poor medical content overlap) to 1 (excellent medical content overlap)
+
+Return ONLY the evaluation in the following structured JSON format:
+
+{
+  "score": <score_value>,
+}
+
+### TEXT1
+{TEXT1}
+
+### END OF TEXT1
+
+### TEXT2
+{TEXT2}
+
+### END OF TEXT2

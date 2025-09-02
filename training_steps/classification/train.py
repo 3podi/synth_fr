@@ -271,17 +271,18 @@ def main(cfg: DictConfig):
     # Train the model
     trainer.train()
     
-    # Save the model
-    trainer.save_model(f"models/{cfg.run_id}")
+    if cfg.save_flag:
+        # Save the model
+        trainer.save_model(f"models/{cfg.run_id}")
     
-    # Save label mappings
-    label_mapping = {
-        "filtered_labels": filtered_labels,
-        "label_filter_percentage": cfg.label_filter_percentage
-    }
+        # Save label mappings
+        label_mapping = {
+            "filtered_labels": filtered_labels,
+            "label_filter_percentage": cfg.label_filter_percentage
+        }
     
-    with open(f"models/{cfg.run_id}/label_mapping.json", "w") as f:
-        json.dump(label_mapping, f, indent=2)
+        with open(f"models/{cfg.run_id}/label_mapping.json", "w") as f:
+            json.dump(label_mapping, f, indent=2)
     
     print("Training completed!")
     wandb.finish()

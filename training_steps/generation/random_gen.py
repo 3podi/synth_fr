@@ -54,6 +54,11 @@ def normalize_text(text):
 def parse_arguments():
     
     parser = argparse.ArgumentParser()
+       
+    parser.add_argument(
+        "--model", type=str, required=True,
+        help="Generator model, hf or local path"
+    )
     
     parser.add_argument(
         "--csv_path", type=str, required=True,
@@ -70,16 +75,25 @@ def parse_arguments():
         help="Max number of codes to randomly sample for each generation"
     )
     
-        parser.add_argument(
+    parser.add_argument(
         "--max_kws", type=int, default=1,
         help="Max number of code definition to keep for each code"
     )
         
-        parser.add_argument(
+    parser.add_argument(
         "--num_samples", type=int, default=10,
         help="Number of samples to generate"
     )
 
+    parser.add_argument(
+        "--tp", type=int, default=1
+    )
+
+    parser.add_argument(
+        "--pp", type=int, default=1
+    )
+
+    
     return parser.parse_args()
 
 def remove_symbols(text):
@@ -259,7 +273,9 @@ if __name__ == "__main__":
     
     responses = generate_responses(
         df['keywords'],
-        model_name = "google/medgemma-27b-text-it" 
+        model_name = args.model,
+        tp = args.tp,
+        pp = args.pps
     )
     
     df['response'] = responses
