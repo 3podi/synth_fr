@@ -80,23 +80,22 @@ class Pipeline:
         script = self.cfg.scripts[self.cfg.step]
         dataset = self.dataset_path()
 
+        escaped_dataset = dataset.replace("=", "\\=")
         # Create hydra arguments as a proper string
         hydra_args = (
             f"group_id={self.group_id} "
             f"run_id={self.run_id} "
             f"dataset_size={self.cfg.size_sft} "
-            f"adapters_paths={to_str(self.adapters)} "
-            f"dataset={dataset.replace('=', '\\=')} "
-            f"model_config.model_name_or_path={self.cfg.model_name}"
+            f"'adapters_paths={to_str(self.adapters)}' "
+            f"'dataset={escaped_dataset}' "
+            f"'model_config.model_name_or_path={self.cfg.model_name}'"
         )
 
         cmd = f"python3 {script} --config-name {self.cfg.domain} {hydra_args}"
-
-        log.info(f"Executing training step: {cmd}")
         self.job_mgr.submit(cmd)
-        
+
         # Update adapters list for next steps
-        self.adapters.append(f"lora/{self.cfg.step}/{run_id}")
+        self.adapters.append(f"lora/{self.cfg.step}/{self.run_id}")
     
     def run_generation(self):
         """Run generation step."""
@@ -145,7 +144,7 @@ class Pipeline:
             f"--public_dataset {self.base_model_path()} "
             f"--private_dataset {self.cfg.private_path} "
             f"--output_path {self.base_model_path()} "
-            f"--tp {selg.cfg.tp} "
+            f"--tp {self.cfg.tp} "
             f"--n 4 "
             f"--wdb_id {self.run_id} "
             f"--group_id {self.group_id} "
@@ -169,8 +168,9 @@ class Pipeline:
         dataset = f"{self.base_model_path()}/random_dataset.parquet"
         run_id = self.run_id
         
+        escaped_dataset = dataset.replace('=', '\\=')
         hydra_args = (
-            f"dataset={dataset.replace('=', '\\=')} "
+            f"dataset={escaped_dataset} "
         )
         
         cmd = f"python3 {script} {hydra_args}"
@@ -178,7 +178,7 @@ class Pipeline:
         log.info(f"Executing classification step: {cmd}")
         self.job_mgr.submit(cmd)
         
-@hydra.main(config_path=".", config_name="grid_sft.yaml", version_base="1.3")
+@hydra.main(config_path=".", config_name="grid_sft_local.yaml", version_base="1.3")
 def main(cfg: DictConfig):
     pipeline = Pipeline(cfg)
     pipeline.run_train_steps()
