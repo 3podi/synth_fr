@@ -275,7 +275,7 @@ if __name__ == "__main__":
         df['keywords'],
         model_name = args.model,
         tp = args.tp,
-        pp = args.pps
+        pp = args.pp
     )
     
     df['response'] = responses
