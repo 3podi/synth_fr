@@ -32,7 +32,7 @@ def chunk_tokens_with_padding(example, padding_token, chunk_size=512, stride=448
         chunk_len = len(chunk)
         
         # Pad if needed
-        if chunk_len < chunk_size:
+        if chunk_len < chunk_size and chunk_len > 50:
             pad_length = chunk_size - chunk_len
             chunk += [padding_token] * pad_length
             #print('Len padded chunk: ', len(chunk))
@@ -95,6 +95,7 @@ def main(cfg: DictConfig):
     )
     model_kwargs = dict(
         torch_dtype=torch_dtype,
+        attn_implementation=cfg.model_config.attn_implementation or "flash_attention_2"
         use_cache=False #if sft_config.gradient_checkpointing else True, never using cache at training time
     )
     model_config.lora_target_modules = (

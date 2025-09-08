@@ -236,7 +236,7 @@ def compute_educational_score(sts_model, tp: int, responses: List[str]) -> dict:
         Dictionary containing one list: educational_scores
     """
     # Read the educational scoring prompt from file
-    prompt_path = "training_steps/score/prompt_educational_scores2.txt"
+    prompt_path = "training_steps/score/prompt_educational_scores.txt"
     with open(prompt_path, "r") as f:
         prompt_template = f.read().strip()
         
