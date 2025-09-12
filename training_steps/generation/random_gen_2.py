@@ -88,6 +88,11 @@ def parse_arguments():
         "--num_samples", type=int, default=10,
         help="Number of samples to generate"
     )
+    
+    parser.add_argument(
+        "--seed", type=int, default=42,
+        help="Seed for reproducibility"
+    )
 
     parser.add_argument(
         "--tp", type=int, default=1
@@ -176,7 +181,7 @@ def quick_random_sample(file_path, sample_size=10000):
     df = pd.read_csv(file_path, skiprows=sample_lines, sep=';')
     return df
 
-def quick_random_sample2(file_path, sample_size=10000):
+def quick_random_sample2(file_path, sample_size=10000, seed=42):
     # Read the entire file
     df = pd.read_csv(file_path, sep=';')
     
@@ -188,7 +193,7 @@ def quick_random_sample2(file_path, sample_size=10000):
 
 def sample_keywords(csv_path: str, num_samples: int = 10, max_codes: int = 1, max_kws: int = 1, seed: int = 42):
     """
-    Generate RANDOM grpo dataset with at least 2 coloumns 'keywords' and 'codes'.
+    Generate RANDOM dataset with at least 2 coloumns 'keywords' and 'codes'.
     Keywords column is a list of keywords to use in the prompt.
     Codes coloumn is a sequence of icd-10 codes.
 
@@ -207,7 +212,7 @@ def sample_keywords(csv_path: str, num_samples: int = 10, max_codes: int = 1, ma
     number_keywords = []
     
 
-    df_sample = quick_random_sample2('../extractions_associations_20250909.csv', sample_size=num_samples)
+    df_sample = quick_random_sample2('../extractions_associations_20250909.csv', sample_size=num_samples, seed=seed)
     
     print('columns: ', df_sample.columns)
 
@@ -235,6 +240,9 @@ def sample_keywords(csv_path: str, num_samples: int = 10, max_codes: int = 1, ma
             
         if len(sampled_kws) == 0:
             continue
+        
+        print('sampled_codes: ', sampled_codes)
+        print('sampled kws: ', sampled_kws)
         
         codes.append(" ".join(sampled_codes))
         keywords.append(", ".join(sampled_kws))
@@ -306,19 +314,20 @@ if __name__ == "__main__":
         csv_path=args.csv_path,
         num_samples=args.num_samples,
         max_codes=args.max_codes,
-        max_kws=args.max_kws
+        max_kws=args.max_kws,
+        seed=args.seed
     )
     
-    responses = generate_responses(
-        df['keywords'],
-        model_name = 'google/medgemma-27b-text-it',
-        tp = args.tp,
-        pp = args.pp
-    )
+    #responses = generate_responses(
+    #    df['keywords'],
+    #    model_name = 'google/medgemma-27b-text-it',
+    #    tp = args.tp,
+    #    pp = args.pp
+    #)
     
-    df['response'] = responses
+    #df['response'] = responses
     
-    output_path = os.path.join(output_dir, "random_dataset_2.parquet")
-    df.to_parquet(output_path)
+    #output_path = os.path.join(output_dir, "random_dataset_2.parquet")
+    #df.to_parquet(output_path)
 
     

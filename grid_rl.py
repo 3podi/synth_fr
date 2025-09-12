@@ -179,7 +179,14 @@ class Pipeline:
 def main(cfg: DictConfig):
     pipeline = Pipeline(cfg)
     for iter in range(cfg.start_it,cfg.end_it):
-        pipeline.run_train_steps(iter)
+        
+        lora_dpo_path = f'lora/{cfg.step}/{cfg.run_id}/iteration_{iter}'
+        if os.path.isdir(lora_dpo_path):
+            print('Already found adapter for iter ', iter)
+            print('Skipping dpo iter ', iter)
+            pipeline.adapters.append(f"lora/{cfg.step}/{cfg.run_id}/iteration_{iter}")
+        else:
+            pipeline.run_train_steps(iter)
         pipeline.run_generation(iter)
         pipeline.run_score(iter)
         pipeline.run_filter(iter)

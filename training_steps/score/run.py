@@ -4,6 +4,7 @@ import re
 from typing import Any, List, Tuple
 
 import nltk
+nltk.download('punkt_tab')
 import pandas as pd
 import torch
 import wandb

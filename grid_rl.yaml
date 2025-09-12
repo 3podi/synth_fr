@@ -2,22 +2,22 @@
 defaults:
   - _self_
 
-size: 1001
-size_generation: 10 #number of prompts to use to generate sequences (4 answers for prompt by default)
+size: 99
+size_generation: 900 #number of prompts to use to generate sequences (4 answers for prompt by default)
 step: dpo
-group_id: rl_llama2_7b
+group_id: rl_llama3_8b
 run_id: ???
-sts_model: FremyCompany/BioLORD-2023
+sts_model: Qwen/Qwen2.5-7B-Instruct #Alibaba-NLP/gte-multilingual-base #FremyCompany/BioLORD-2023
 domain: health
-private_path: datasets/health/model=meta-llama-llama-2-7b-hf_size=1001/private_seed.parquet
+private_path: datasets/health/model=meta-llama-Meta-Llama-3-8B-Instruct_size=99/private_seed.parquet #datasets/health/model=meta-llama-Llama-3.2-1B-Instruct_size=1001/private_seed.parquet #datasets/health/model=meta-llama-llama-2-7b-hf_size=1001/private_seed.parquet
 tp: 1
-model_name: meta-llama/llama-2-7b-hf
+model_name: meta-llama/Meta-Llama-3-8B-Instruct #meta-llama/Llama-3.2-1B-Instruct #meta-llama/llama-2-7b-hf
 
 lora_path: "lora/" 
 start_it: 1
-end_it: 3
+end_it: 4
 
-sorting: "s"
+sorting: "avg"
 train_steps: "dpo"
 
 scripts:

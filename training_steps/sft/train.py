@@ -95,7 +95,7 @@ def main(cfg: DictConfig):
     )
     model_kwargs = dict(
         torch_dtype=torch_dtype,
-        attn_implementation=cfg.model_config.attn_implementation or "flash_attention_2"
+        attn_implementation=cfg.model_config.attn_implementation or "flash_attention_2",
         use_cache=False #if sft_config.gradient_checkpointing else True, never using cache at training time
     )
     model_config.lora_target_modules = (

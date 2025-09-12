@@ -2,6 +2,7 @@ import hydra
 import peft
 import torch
 import wandb
+import pandas as pd
 from datasets import Dataset
 from omegaconf import ListConfig, OmegaConf
 from peft import PeftModel
@@ -69,20 +70,34 @@ def main(cfg):
 
     model.add_adapter(peft_config=peft_config, adapter_name="reference")
     model.enable_input_require_grads()
+    
+    print(model)
+    params_to_optimize = [p for p in model.parameters() if p.requires_grad]    
+    num_params = sum(p.numel() for p in params_to_optimize)
+    num_params_mb = sum(p.numel() * p.element_size() for p in params_to_optimize) / (1024**2)
+    print(f"Trainable parameters: {num_params:,}")
+    print(f"Total size: {num_params_mb:.2f} MB")
 
     tokenizer = AutoTokenizer.from_pretrained(model_config.model_name_or_path)
     dpo_config.padding_value = tokenizer.eos_token_id
 
-    dataset = Dataset.from_parquet(cfg.dataset).to_pandas().head(cfg.dataset_size)
-    dataset["prompt"] = dataset["instruction"]
-    dataset = Dataset.from_pandas(dataset)
-    dataset.select_columns(["prompt", "chosen", "rejected"])
+    dataset = Dataset.from_pandas(pd.read_parquet(cfg.dataset).head(cfg.dataset_size))
+    # Add prompt column
+    dataset = dataset.add_column("prompt", dataset["instruction"])
+    dataset = dataset.select_columns(["prompt", "chosen", "rejected"])
+    
+    split_dataset = dataset.train_test_split(test_size=0.1, seed=42)
+    train_dataset = split_dataset['train']
+    val_dataset = split_dataset['test']
+    print('len train: ', len(train_dataset))
+    print('len val: ', len(val_dataset))
 
     dpo_trainer = DPOTrainer(
         args=dpo_config,
         model=model,
         tokenizer=tokenizer,
-        train_dataset=dataset,
+        train_dataset=train_dataset,
+        eval_dataset=val_dataset,
         callbacks=[PrintAllLogsCallback()],
     )
     dpo_trainer.train()
