@@ -241,9 +241,6 @@ def sample_keywords(csv_path: str, num_samples: int = 10, max_codes: int = 1, ma
         if len(sampled_kws) == 0:
             continue
         
-        print('sampled_codes: ', sampled_codes)
-        print('sampled kws: ', sampled_kws)
-        
         codes.append(" ".join(sampled_codes))
         keywords.append(", ".join(sampled_kws))
         number_codes.append(n_codes)
@@ -318,16 +315,16 @@ if __name__ == "__main__":
         seed=args.seed
     )
     
-    #responses = generate_responses(
-    #    df['keywords'],
-    #    model_name = 'google/medgemma-27b-text-it',
-    #    tp = args.tp,
-    #    pp = args.pp
-    #)
+    responses = generate_responses(
+        df['keywords'],
+        model_name = args.model,
+        tp = args.tp,
+        pp = args.pp
+    )
     
-    #df['response'] = responses
+    df['response'] = responses
     
-    #output_path = os.path.join(output_dir, "random_dataset_2.parquet")
-    #df.to_parquet(output_path)
+    output_path = os.path.join(output_dir, "random_dataset_2.parquet")
+    df.to_parquet(output_path)
 
     
