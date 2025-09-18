@@ -9,7 +9,7 @@ training_arguments:
   weight_decay: 0.01
   lr_scheduler_type: "cosine"
   logging_steps: 10
-  evaluation_strategy: "steps"
+  eval_strategy: "steps"
   eval_steps: 500
   save_steps: 1000
   load_best_model_at_end: true
@@ -24,7 +24,7 @@ max_seq_length: 512
 # Data
 dataset_size: -1  # -1 means use all data
 text_column: "response"  # Column name for input text
-label_column: "code"  # Column name for labels (comma-separated)
+label_column: "codes"  # Column name for labels (comma-separated)
 label_filter_percentage: 20
 max_labels_per_sample: 5
 
