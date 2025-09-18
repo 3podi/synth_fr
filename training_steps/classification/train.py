@@ -139,12 +139,12 @@ def count_labels_in_dataset(df: pd.DataFrame, label_column: str) -> Dict[str, in
     for _, row in df.iterrows():
         if pd.notna(row[label_column]):
             # Split by whitespace and strip any extra spaces
-            labels = [label.strip() for label in str(row[label_column]).split() if label.strip()]
+            labels = [label.strip()[:3] for label in str(row[label_column]).split() if label.strip()]
             label_counts.update(labels)
     
     return dict(label_counts)
 
-def filter_labels_by_frequency(label_counts: Dict[str, int], percentage: float) -> List[str]:
+def filter_labels_by_frequency(label_counts: Dict[str, int], percentage: float, n_keep: int) -> List[str]:
     """
     Filter labels by their occurrence percentage.
     """
@@ -155,12 +155,16 @@ def filter_labels_by_frequency(label_counts: Dict[str, int], percentage: float) 
     sorted_labels = sorted(label_counts.items(), key=lambda x: x[1], reverse=True)
     
     # Calculate number of labels to keep
-    num_labels_to_keep = int(len(sorted_labels) * percentage / 100)
+    if percentage:
+        print(f'Keeping first {percentage}% of labels')
+        num_labels_to_keep = int(len(sorted_labels) * percentage / 100)
+    else:
+        print(f'Keeping first {n_keep} labels')
     
     # Keep the most frequent labels
     filtered_labels = [label for label, freq in sorted_labels[:num_labels_to_keep]]
     
-    print(f"Keeping {len(filtered_labels)} out of {len(label_counts)} labels ({percentage}% most frequent)")
+    print(f"Kept {len(filtered_labels)} out of {len(label_counts)} labels") #({percentage}% most frequent)")
     print(f"Top 10 most frequent labels: {sorted_labels[:10]}")
     return filtered_labels
 
@@ -254,6 +258,57 @@ class WeightedTrainer(Trainer):
 
         loss = loss_fct(logits, labels.float())
         return (loss, outputs) if return_outputs else loss
+    
+class MultiEvalSFTTrainer(WeightedTrainer):
+    def __init__(self, *args, eval_datasets: Dict[str, Any] = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.eval_datasets = eval_datasets or {}
+
+        # Ensure we have a "main" dataset for core Trainer logic
+        if "main" in self.eval_datasets:
+            self.eval_dataset = self.eval_datasets["main"]
+        elif len(self.eval_datasets) > 0:
+            first_key = next(iter(self.eval_datasets))
+            self.eval_dataset = self.eval_datasets[first_key]
+            self.eval_datasets["main"] = self.eval_dataset
+
+    def evaluate(self, eval_dataset=None, ignore_keys=None, metric_key_prefix="eval"):
+        # Run base evaluation on "main"
+        main_metrics = super().evaluate(eval_dataset, ignore_keys, metric_key_prefix)
+        all_metrics = dict(main_metrics)
+
+        # Extra evals
+        for name, dataset in self.eval_datasets.items():
+            if name == "main":
+                continue
+
+            print(f"Evaluating on {name} dataset...")
+            dataloader = self.get_eval_dataloader(dataset)
+
+            eval_preds = self.evaluation_loop(
+                dataloader,
+                description=f"Evaluation {name}",
+                prediction_loss_only=True if self.compute_metrics is None else None,
+                ignore_keys=ignore_keys,
+            )
+
+            metrics = {}
+            if self.compute_metrics is not None and eval_preds.predictions is not None:
+                metrics = self.compute_metrics(eval_preds)
+            metrics.update(eval_preds.metrics)  # always include loss
+
+            # Prefix
+            prefixed_metrics = {f"{name}_{k}": v for k, v in metrics.items()}
+            all_metrics.update(prefixed_metrics)
+
+            # Optional W&B logging
+            if "wandb" in globals() and wandb.run is not None:
+                wandb.log(prefixed_metrics, commit=False)
+
+        if "wandb" in globals() and wandb.run is not None:
+            wandb.log({}, commit=True)
+
+        return all_metrics
 
 @hydra.main(version_base=None, config_path="./configs", config_name="default")
 def main(cfg: DictConfig):
@@ -272,6 +327,7 @@ def main(cfg: DictConfig):
     )
     
     wandb.init(
+        disable=True,
         project="synth-fr",
         tags=cfg.tags,
         config=wandb_config,
@@ -301,7 +357,8 @@ def main(cfg: DictConfig):
     # Filter labels by frequency
     filtered_labels = filter_labels_by_frequency(
         label_counts, 
-        cfg.label_filter_percentage
+        cfg.label_filter_percentage,
+        cfg.label_filter_number
     )
     
     # If no labels were selected, show warning and exit
@@ -328,6 +385,24 @@ def main(cfg: DictConfig):
     print(f"Labels present in final dataset: {len(all_labels_in_dataset)}")
     print(f"Sample labels: {sorted(list(all_labels_in_dataset))[:10]}...")  # Show first 10
     
+    
+    print(f"Loading SECOND validation dataset from {cfg.val_dataset_2}")
+    df_val2 = pd.read_parquet(cfg.val_dataset_2)
+
+    # Apply SAME label filtering
+    df_val_2 = prepare_multilabel_data(
+        df_val2,
+        cfg.text_column,
+        cfg.label_column,
+        filtered_labels,  #reuse train's filtered labels
+        max_labels_per_sample=cfg.max_labels_per_sample
+    )
+
+    print(f"Prepared SECOND validation dataset with {len(df_val_2)} samples (after filtering)")
+    if len(df_val_2) == 0:
+        print("Warning: Second validation dataset is empty after filtering.")
+        df_val_2 = None
+    
     # Initialize tokenizer
     tokenizer = AutoTokenizer.from_pretrained(cfg.model_config.model_name_or_path)
     if tokenizer.pad_token is None:
@@ -337,6 +412,12 @@ def main(cfg: DictConfig):
     
     # Tokenize dataset
     tokenized_dataset = dataset.map(
+        lambda examples: tokenize_function(examples, tokenizer, cfg.max_seq_length),
+        batched=True,
+        remove_columns=["text"]  # Remove original columns
+    )
+    
+    df_val_2 = df_val_2.map(
         lambda examples: tokenize_function(examples, tokenizer, cfg.max_seq_length),
         batched=True,
         remove_columns=["text"]  # Remove original columns
@@ -358,6 +439,11 @@ def main(cfg: DictConfig):
     
     # Apply label preparation
     labeled_dataset = tokenized_dataset.map(
+        add_binary_labels2,
+        batched=False
+    )
+    
+    df_val_2 = df_val_2.map(
         add_binary_labels2,
         batched=False
     )
