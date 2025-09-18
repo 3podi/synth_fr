@@ -19,6 +19,111 @@ from collections import Counter
 
 logger = logging.getLogger(__name__)
 
+
+# --- Compute pos_weight for each label based on TRAINING SET ---
+def compute_pos_weights(train_dataset):
+    """
+    Compute positive weights for each label: num_neg / num_pos
+    Avoid division by zero by setting a minimum positive count (e.g., 1)
+    """
+    # Stack all label tensors
+    all_labels = np.stack([example['labels'] for example in train_dataset])
+
+    # Count positive samples per label
+    pos_counts = np.sum(all_labels, axis=0)  # shape: (num_labels,)
+    total_samples = len(train_dataset)
+    neg_counts = total_samples - pos_counts
+
+    # Avoid division by zero if no positive samples, set weight to 1.0
+    pos_counts = np.clip(pos_counts, 1, None)  # minimum 1 to avoid inf
+
+    pos_weights = neg_counts / pos_counts
+    return torch.tensor(pos_weights, dtype=torch.float32)
+
+
+def compute_metrics(eval_pred):
+    """
+    Compute label-wise and sample-wise metrics for multi-label classification.
+    Focuses on non-exact-match evaluation since labels are independent.
+
+    Args:
+        eval_pred: EvalPrediction with .predictions (logits) and .label_ids (multi-hot)
+
+    Returns:
+        dict: Comprehensive metrics for multi-label performance
+    """
+    predictions, labels = eval_pred
+
+    # Apply sigmoid to get probabilities (since labels are independent)
+    sigmoid = lambda x: 1 / (1 + np.exp(-np.clip(x, -100, 100)))  # clip for numerical stability
+    probs = sigmoid(predictions)
+    preds = (probs > 0.5).astype(int)  # default 0.5 threshold
+
+    # Ensure labels are integers
+    labels = labels.astype(int)
+
+    # --- Hamming Loss (fraction of wrong labels across all samples * all labels) ---
+    h_loss = hamming_loss(labels, preds)
+
+    # --- Jaccard/IoU Score (per sample, then averaged) ---
+    # Measures similarity between pred & true label sets per sample
+    jaccard_macro = jaccard_score(labels, preds, average='samples', zero_division=0)
+
+    # --- Label-wise (Macro) Metrics ---
+    # Average metric per label, then average across labels
+    f1_macro = f1_score(labels, preds, average='macro', zero_division=0)
+    precision_macro = precision_score(labels, preds, average='macro', zero_division=0)
+    recall_macro = recall_score(labels, preds, average='macro', zero_division=0)
+
+    # --- Sample-wise (Micro) Metrics ---
+    # Aggregate all TP/FP/FN across all labels and samples
+    f1_micro = f1_score(labels, preds, average='micro', zero_division=0)
+    precision_micro = precision_score(labels, preds, average='micro', zero_division=0)
+    recall_micro = recall_score(labels, preds, average='micro', zero_division=0)
+
+    # --- AUC-ROC (macro and micro) ---
+    #try:
+    #    auc_macro = roc_auc_score(labels, probs, average='macro')
+    #    auc_micro = roc_auc_score(labels, probs, average='micro')
+    #except ValueError as e:
+    #    logging.warning(f"ROC AUC could not be computed: {e}")
+    #    auc_macro = auc_micro = 0.0
+
+    # --- Optional: Per-label F1 and AUC (for debugging/analysis) ---
+    # Uncomment if you want to log per-label breakdowns
+    # f1_per_label = f1_score(labels, preds, average=None, zero_division=0)
+    # try:
+    #     auc_per_label = roc_auc_score(labels, probs, average=None)
+    # except:
+    #     auc_per_label = [0.0] * labels.shape[1]
+    #
+    # per_label_metrics = {
+    #     f"f1_label_{i}": score for i, score in enumerate(f1_per_label)
+    # }
+    # per_label_metrics.update({
+    #     f"auc_label_{i}": score for i, score in enumerate(auc_per_label)
+    # })
+
+    # Build results dict
+    metrics = {
+        "hamming_loss": h_loss,
+        "jaccard_score_samples_avg": jaccard_macro,  # aka "Exact Jaccard"
+        "f1_macro": f1_macro,
+        "precision_macro": precision_macro,
+        "recall_macro": recall_macro,
+        "f1_micro": f1_micro,
+        "precision_micro": precision_micro,
+        "recall_micro": recall_micro,
+        #"auc_macro": auc_macro,
+        #"auc_micro": auc_micro,
+    }
+
+    # If you want per-label metrics uncomment this:
+    # metrics.update(per_label_metrics)
+
+    return metrics
+
+
 class PrintAllLogsCallback:
     def on_log(self, args, state, control, logs, **kwargs):
         print(f"[Step {state.global_step}] Logs: {logs}")
@@ -125,7 +230,32 @@ def tokenize_function(examples, tokenizer, max_length: int = 512):
         "attention_mask": tokenized["attention_mask"]
     }
 
-@hydra.main(version_base=None, config_path="./configs", config_name="multilabel_config")
+import torch
+from transformers import Trainer
+
+class WeightedTrainer(Trainer):
+    def __init__(self, *args, class_weights=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if class_weights is not None:
+            # pos_weight expects 1D tensor of shape [num_labels]
+            self.class_weights = torch.tensor(class_weights, dtype=torch.float)
+        else:
+            self.class_weights = None
+
+    def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
+        labels = inputs.get("labels")
+        outputs = model(**inputs)
+        logits = outputs.get("logits")
+
+        if self.class_weights is not None:
+            loss_fct = torch.nn.BCEWithLogitsLoss(pos_weight=self.class_weights.to(logits.device))
+        else:
+            loss_fct = torch.nn.BCEWithLogitsLoss()
+
+        loss = loss_fct(logits, labels.float())
+        return (loss, outputs) if return_outputs else loss
+
+@hydra.main(version_base=None, config_path="./configs", config_name="default")
 def main(cfg: DictConfig):
     """
     Multi-label classification training script.
@@ -221,9 +351,14 @@ def main(cfg: DictConfig):
         binary_labels = mlb.transform([example["labels"]])[0]  # shape (num_labels,)
         return {"labels": binary_labels.astype("float32")}
 
+    def add_binary_labels2(example):
+        # Create binary vector for multi-label classification
+        binary_labels = [1.0 if label in example["labels"] else 0.0 for label in filtered_labels]
+        return {"labels": torch.tensor(binary_labels, dtype=torch.float32)}
+    
     # Apply label preparation
     labeled_dataset = tokenized_dataset.map(
-        add_binary_labels,
+        add_binary_labels2,
         batched=False
     )
     
@@ -239,7 +374,8 @@ def main(cfg: DictConfig):
     model_kwargs = dict(
         torch_dtype=cfg.model_config.torch_dtype,  
         num_labels=len(filtered_labels),  # Number of labels for classification
-        problem_type="multi_label_classification"  # Specify multi-label classification
+        problem_type="multi_label_classification",  # Specify multi-label classification
+        pad_token_id=tokenizer.eos_token_id,
     )
     
     model = AutoModelForSequenceClassification.from_pretrained(
@@ -255,7 +391,8 @@ def main(cfg: DictConfig):
     
     # Create data collator
     data_collator = DefaultDataCollator(return_tensors="pt")
-    
+
+    class_weights = compute_pos_weights(train_dataset)
     # Initialize trainer
     trainer = Trainer(
         model=model,
@@ -264,8 +401,9 @@ def main(cfg: DictConfig):
         eval_dataset=val_dataset,
         tokenizer=tokenizer,
         data_collator=data_collator,
-        callbacks=[PrintAllLogsCallback()],
-        compute_metrics=compute_metrics
+        #callbacks=[PrintAllLogsCallback()],
+        compute_metrics=compute_metrics,
+        class_weights=class_weights
     )
     
     # Train the model
