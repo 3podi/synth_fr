@@ -1,11 +1,15 @@
 model_config:
   model_name_or_path: "answerdotai/ModernBERT-large"
-  torch_dtype: "float32"
+  #model_name_or_path: "microsoft/deberta-v3-base"
+  torch_dtype: "bfloat16"
+  classifier_dropout: 0.5
+  mlp_dropout: 0.5
+  attention_dropout: 0.3
 
 training_arguments:
-  learning_rate: 2e-5
-  num_train_epochs: 20
-  warmup_steps: 100
+  learning_rate: 1e-4
+  num_train_epochs: 10
+  warmup_steps: 300
   weight_decay: 0.01
   lr_scheduler_type: "cosine"
   logging_steps: 10
@@ -18,8 +22,9 @@ training_arguments:
   report_to: "wandb"
   per_device_train_batch_size: 32
   per_device_eval_batch_size: 32
-  
-max_seq_length: 1024
+  max_grad_norm: 10.0
+
+max_seq_length: 2048
 
 # Data
 dataset_size: -1  # -1 means use all data
@@ -30,8 +35,8 @@ label_filter_number: 50
 max_labels_per_sample: 10
 
 # File paths
-dataset: datasets/health/sft/final_medgemma_random_and_associations_20k.parquet  # Path to your parquet dataset
-val_dataset_2: datasets/health/sft/crh_partages_filter_len_120.parquet
+dataset: ../train_classification2.parquet  # Path to your parquet dataset
+val_dataset_2: ../validation2.parquet
 
 # Save model
 save_flag: false
@@ -39,4 +44,3 @@ save_flag: false
 run_id: prova
 tags: ["multilabel", "classification"]
 group_id: "multilabel_group"
-

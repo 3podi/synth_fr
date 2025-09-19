@@ -14,9 +14,17 @@ from sklearn.preprocessing import MultiLabelBinarizer
 import numpy as np
 from typing import List, Dict, Any
 import json
-from sklearn.metrics import f1_score, roc_auc_score
 from collections import Counter
 
+import numpy as np
+from sklearn.metrics import (
+    f1_score,
+    precision_score,
+    recall_score,
+    hamming_loss,
+    roc_auc_score,
+    jacc
+    )
 logger = logging.getLogger(__name__)
 
 
@@ -41,7 +49,7 @@ def compute_pos_weights(train_dataset):
     return torch.tensor(pos_weights, dtype=torch.float32)
 
 
-def compute_metrics(eval_pred):
+def compute_metrics(eval_pred: EvalPrediction):
     """
     Compute label-wise and sample-wise metrics for multi-label classification.
     Focuses on non-exact-match evaluation since labels are independent.
@@ -52,77 +60,38 @@ def compute_metrics(eval_pred):
     Returns:
         dict: Comprehensive metrics for multi-label performance
     """
-    predictions, labels = eval_pred
+    predictions = eval_pred.predictions
+    labels = eval_pred.label_ids
 
     # Apply sigmoid to get probabilities (since labels are independent)
-    sigmoid = lambda x: 1 / (1 + np.exp(-np.clip(x, -100, 100)))  # clip for numerical stability
+    sigmoid = lambda x: 1 / (1 + np.exp(-np.clip(x, -100, 100)))  # clip for stability
     probs = sigmoid(predictions)
-    preds = (probs > 0.5).astype(int)  # default 0.5 threshold
+    preds = (probs > 0.5).astype(int)  # threshold at 0.5
 
-    # Ensure labels are integers
     labels = labels.astype(int)
 
-    # --- Hamming Loss (fraction of wrong labels across all samples * all labels) ---
+    # --- Metrics ---
     h_loss = hamming_loss(labels, preds)
+    jaccard_macro = jaccard_score(labels, preds, average="samples", zero_division=0)
 
-    # --- Jaccard/IoU Score (per sample, then averaged) ---
-    # Measures similarity between pred & true label sets per sample
-    jaccard_macro = jaccard_score(labels, preds, average='samples', zero_division=0)
+    f1_macro = f1_score(labels, preds, average="macro", zero_division=0)
+    precision_macro = precision_score(labels, preds, average="macro", zero_division=0)
+    recall_macro = recall_score(labels, preds, average="macro", zero_division=0)
 
-    # --- Label-wise (Macro) Metrics ---
-    # Average metric per label, then average across labels
-    f1_macro = f1_score(labels, preds, average='macro', zero_division=0)
-    precision_macro = precision_score(labels, preds, average='macro', zero_division=0)
-    recall_macro = recall_score(labels, preds, average='macro', zero_division=0)
+    f1_micro = f1_score(labels, preds, average="micro", zero_division=0)
+    precision_micro = precision_score(labels, preds, average="micro", zero_division=0)
+    recall_micro = recall_score(labels, preds, average="micro", zero_division=0)
 
-    # --- Sample-wise (Micro) Metrics ---
-    # Aggregate all TP/FP/FN across all labels and samples
-    f1_micro = f1_score(labels, preds, average='micro', zero_division=0)
-    precision_micro = precision_score(labels, preds, average='micro', zero_division=0)
-    recall_micro = recall_score(labels, preds, average='micro', zero_division=0)
-
-    # --- AUC-ROC (macro and micro) ---
-    #try:
-    #    auc_macro = roc_auc_score(labels, probs, average='macro')
-    #    auc_micro = roc_auc_score(labels, probs, average='micro')
-    #except ValueError as e:
-    #    logging.warning(f"ROC AUC could not be computed: {e}")
-    #    auc_macro = auc_micro = 0.0
-
-    # --- Optional: Per-label F1 and AUC (for debugging/analysis) ---
-    # Uncomment if you want to log per-label breakdowns
-    # f1_per_label = f1_score(labels, preds, average=None, zero_division=0)
-    # try:
-    #     auc_per_label = roc_auc_score(labels, probs, average=None)
-    # except:
-    #     auc_per_label = [0.0] * labels.shape[1]
-    #
-    # per_label_metrics = {
-    #     f"f1_label_{i}": score for i, score in enumerate(f1_per_label)
-    # }
-    # per_label_metrics.update({
-    #     f"auc_label_{i}": score for i, score in enumerate(auc_per_label)
-    # })
-
-    # Build results dict
-    metrics = {
+    return {
         "hamming_loss": h_loss,
-        "jaccard_score_samples_avg": jaccard_macro,  # aka "Exact Jaccard"
+        "jaccard_score_samples_avg": jaccard_macro,
         "f1_macro": f1_macro,
         "precision_macro": precision_macro,
         "recall_macro": recall_macro,
         "f1_micro": f1_micro,
         "precision_micro": precision_micro,
         "recall_micro": recall_micro,
-        #"auc_macro": auc_macro,
-        #"auc_micro": auc_micro,
     }
-
-    # If you want per-label metrics uncomment this:
-    # metrics.update(per_label_metrics)
-
-    return metrics
-
 
 class PrintAllLogsCallback:
     def on_log(self, args, state, control, logs, **kwargs):
@@ -234,8 +203,6 @@ def tokenize_function(examples, tokenizer, max_length: int = 512):
         "attention_mask": tokenized["attention_mask"]
     }
 
-import torch
-from transformers import Trainer
 
 class WeightedTrainer(Trainer):
     def __init__(self, *args, class_weights=None, **kwargs):
@@ -258,19 +225,29 @@ class WeightedTrainer(Trainer):
 
         loss = loss_fct(logits, labels.float())
         return (loss, outputs) if return_outputs else loss
-    
+
 class MultiEvalSFTTrainer(WeightedTrainer):
     def __init__(self, *args, eval_datasets: Dict[str, Any] = None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.eval_datasets = eval_datasets or {}
+        eval_datasets = eval_datasets or {}
 
-        # Ensure we have a "main" dataset for core Trainer logic
-        if "main" in self.eval_datasets:
-            self.eval_dataset = self.eval_datasets["main"]
-        elif len(self.eval_datasets) > 0:
-            first_key = next(iter(self.eval_datasets))
-            self.eval_dataset = self.eval_datasets[first_key]
-            self.eval_datasets["main"] = self.eval_dataset
+        # Pick main dataset
+        if "main" in eval_datasets:
+            main_eval = eval_datasets["main"]
+        elif len(eval_datasets) > 0:
+            first_key = next(iter(eval_datasets))
+            main_eval = eval_datasets[first_key]
+            eval_datasets["main"] = main_eval
+        else:
+            main_eval = None
+
+        # Ensure base Trainer sees something
+        if main_eval is not None and "eval_dataset" not in kwargs:
+            kwargs["eval_dataset"] = main_eval
+
+        super().__init__(*args, **kwargs)
+
+        # Save dict of all eval datasets
+        self.eval_datasets = eval_datasets
 
     def evaluate(self, eval_dataset=None, ignore_keys=None, metric_key_prefix="eval"):
         # Run base evaluation on "main"
@@ -294,8 +271,14 @@ class MultiEvalSFTTrainer(WeightedTrainer):
 
             metrics = {}
             if self.compute_metrics is not None and eval_preds.predictions is not None:
-                metrics = self.compute_metrics(eval_preds)
-            metrics.update(eval_preds.metrics)  # always include loss
+                eval_prediction = EvalPrediction(
+                    predictions=eval_preds.predictions,
+                    label_ids=eval_preds.label_ids,
+                )
+                metrics = self.compute_metrics(eval_prediction)
+
+            # Always include loss from the loop
+            metrics.update(eval_preds.metrics)
 
             # Prefix
             prefixed_metrics = {f"{name}_{k}": v for k, v in metrics.items()}
@@ -308,7 +291,6 @@ class MultiEvalSFTTrainer(WeightedTrainer):
         if "wandb" in globals() and wandb.run is not None:
             wandb.log({}, commit=True)
 
-        return all_metrics
 
 @hydra.main(version_base=None, config_path="./configs", config_name="default")
 def main(cfg: DictConfig):
@@ -327,7 +309,6 @@ def main(cfg: DictConfig):
     )
     
     wandb.init(
-        disable=True,
         project="synth-fr",
         tags=cfg.tags,
         config=wandb_config,
@@ -338,29 +319,29 @@ def main(cfg: DictConfig):
     
     print('Wandb run-id: ', wandb.run.id)
     print("Model: ", cfg.model_config.model_name_or_path)
-    
+
     # Load and prepare dataset
     print(f"Loading dataset from {cfg.dataset}")
     df = pd.read_parquet(cfg.dataset)
-    
+
     # Limit dataset size if specified
     if hasattr(cfg, 'dataset_size') and cfg.dataset_size > 0:
         df = df.head(cfg.dataset_size)
-    
+
     print(f"Dataset size: {len(df)} samples")
-    
+
     # Count labels in the dataset to get frequencies
     print("Counting label frequencies from dataset...")
     label_counts = count_labels_in_dataset(df, cfg.label_column)
     print(f"Found {len(label_counts)} unique labels in dataset")
-    
+
     # Filter labels by frequency
     filtered_labels = filter_labels_by_frequency(
-        label_counts, 
+        label_counts,
         cfg.label_filter_percentage,
         cfg.label_filter_number
     )
-    
+
     # If no labels were selected, show warning and exit
     if len(filtered_labels) == 0:
         print("Warning: No labels selected after filtering. Exiting.")
@@ -368,24 +349,24 @@ def main(cfg: DictConfig):
     
     # Prepare multi-label data with filtering
     dataset = prepare_multilabel_data(
-        df, 
-        cfg.text_column, 
-        cfg.label_column, 
+        df,
+        cfg.text_column,
+        cfg.label_column,
         filtered_labels,
         max_labels_per_sample=cfg.max_labels_per_sample
     )
-    
+
     print(f"Prepared dataset with {len(dataset)} samples (after filtering)")
-    
+
     # Show label distribution in final dataset
     all_labels_in_dataset = set()
     for sample in dataset:
         all_labels_in_dataset.update(sample['labels'])
-    
+
     print(f"Labels present in final dataset: {len(all_labels_in_dataset)}")
     print(f"Sample labels: {sorted(list(all_labels_in_dataset))[:10]}...")  # Show first 10
-    
-    
+
+
     print(f"Loading SECOND validation dataset from {cfg.val_dataset_2}")
     df_val2 = pd.read_parquet(cfg.val_dataset_2)
 
@@ -402,12 +383,12 @@ def main(cfg: DictConfig):
     if len(df_val_2) == 0:
         print("Warning: Second validation dataset is empty after filtering.")
         df_val_2 = None
-    
+
     # Initialize tokenizer
     tokenizer = AutoTokenizer.from_pretrained(cfg.model_config.model_name_or_path)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
-    
+
     print(f'Using padding token: {tokenizer.pad_token}, ID: {tokenizer.pad_token_id}')
     
     # Tokenize dataset
@@ -416,13 +397,13 @@ def main(cfg: DictConfig):
         batched=True,
         remove_columns=["text"]  # Remove original columns
     )
-    
+
     df_val_2 = df_val_2.map(
         lambda examples: tokenize_function(examples, tokenizer, cfg.max_seq_length),
         batched=True,
         remove_columns=["text"]  # Remove original columns
     )
-    
+
     # Prepare labels for multi-label classification
     # Fit the binarizer once using all labels
     mlb = MultiLabelBinarizer(classes=filtered_labels)
@@ -436,25 +417,26 @@ def main(cfg: DictConfig):
         # Create binary vector for multi-label classification
         binary_labels = [1.0 if label in example["labels"] else 0.0 for label in filtered_labels]
         return {"labels": torch.tensor(binary_labels, dtype=torch.float32)}
-    
+
     # Apply label preparation
     labeled_dataset = tokenized_dataset.map(
         add_binary_labels2,
         batched=False
     )
-    
+
     df_val_2 = df_val_2.map(
         add_binary_labels2,
         batched=False
     )
-    
+
     # Split dataset
     split_dataset = labeled_dataset.train_test_split(test_size=0.1, seed=42)
     train_dataset = split_dataset['train']
     val_dataset = split_dataset['test']
-    
+
     print('Num train samples: ', len(train_dataset))
     print('Num val samples: ', len(val_dataset))
+    print('Num samples in val 2: ', len(df_val_2))
     
     # Initialize model for multi-label classification
     model_kwargs = dict(
@@ -480,16 +462,20 @@ def main(cfg: DictConfig):
 
     class_weights = compute_pos_weights(train_dataset)
     # Initialize trainer
-    trainer = Trainer(
+    trainer = MultiEvalSFTTrainer(
         model=model,
         args=training_args,
         train_dataset=train_dataset,
-        eval_dataset=val_dataset,
+        eval_datasets={
+        "main": val_dataset,
+        "private_eval": df_val_2,
+        },
         tokenizer=tokenizer,
         data_collator=data_collator,
         #callbacks=[PrintAllLogsCallback()],
         compute_metrics=compute_metrics,
-        class_weights=class_weights
+        class_weights=class_weights,
+        #max_grad_norm=10.0
     )
     
     # Train the model

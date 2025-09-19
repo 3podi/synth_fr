@@ -58,7 +58,7 @@ def generate_responses(model, prompts, num_sequences):
     for idx in range(num_sequences):
         # Randomly select parameters within a desired range
         if idx == 0:
-            temperature = 0.6
+            temperature = 0.2
         else:
             temperature = random.uniform(0.6, 0.9)
         top_p = random.uniform(0.8, 0.95)
@@ -66,14 +66,14 @@ def generate_responses(model, prompts, num_sequences):
 
         sampling_params = SamplingParams(
             temperature=temperature,
-            top_p=top_p,
-            top_k=top_k,
-            max_tokens=2048,
-            seed=random.randint(0, 2**32 - 1),
+            #top_p=top_p,
+            #top_k=top_k,
+            max_tokens=3000,
+            #seed=random.randint(0, 2**32 - 1),
             #stop=["</s>"],
-            stop_token_ids = stop_token_ids,
-            presence_penalty=1.0,
-            frequency_penalty=1.2,
+            #stop_token_ids = stop_token_ids,
+            #presence_penalty=1.0,
+            #frequency_penalty=1.2,
             n=1,
         )
         modified_prompt = prompts  # or apply a function that randomly perturbs the prompt
@@ -101,7 +101,9 @@ def main():
         model=args.model,
         tensor_parallel_size=args.tp,
         pipeline_parallel_size=args.pp,
-        enable_chunked_prefill=False,
+        pu_memory_utilization=0.95,
+        max_model_len=16384
+        #enable_chunked_prefill=False,
     )
     # Generate multiple responses per prompt
     print("Generating responses")
