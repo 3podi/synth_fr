@@ -101,7 +101,7 @@ def main():
         model=args.model,
         tensor_parallel_size=args.tp,
         pipeline_parallel_size=args.pp,
-        pu_memory_utilization=0.95,
+        gpu_memory_utilization=0.95,
         max_model_len=16384
         #enable_chunked_prefill=False,
     )
