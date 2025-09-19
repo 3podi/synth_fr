@@ -3,31 +3,31 @@ defaults:
   - _self_
 
 size: 2766 #99
-size_sft: 2766 #99 #can be lower than size if you want sft on less samples
-size_generation: 800 #number of prompts to use to generate sequences (4 answers for prompt by default)
+size_sft: 20995 #99 #can be lower than size if you want sft on less samples
+size_generation: 2800 #number of prompts to use to generate sequences (4 answers for prompt by default)
 step: sft
-group_id: sft_llama3_8b
-sts_model: Qwen/Qwen2.5-7B-Instruct #microsoft/MediPhi-Instruct #Qwen/Qwen3-8B #google/gemma-2-9b-it #Alibaba-NLP/gte-multilingual-base #FremyCompany/BioLORD-2023
+group_id: sft_qwen_4b
+sts_model: Qwen/Qwen3-30B-A3B-Instruct-2507 #microsoft/MediPhi-Instruct #Qwen/Qwen3-8B #google/gemma-2-9b-it #Alibaba-NLP/gte-multilingual-base #FremyCompany/BioLORD-2023
 domain: health
-private_path: datasets/health/model=meta-llama-Meta-Llama-3-8B-Instruct_size=2766/private_seed.parquet #datasets/health/model=meta-llama-Llama-3.2-1B-Instruct_size=1001/private_seed.parquet #datasets/health/model=meta-llama-llama-2-7b-hf_size=1001/private_seed.parquet
+private_path: datasets/health/model=Qwen-Qwen3-4B-Instruct-2507_size=20995/private_seed.parquet #datasets/health/model=meta-llama-Llama-3.2-1B-Instruct_size=1001/private_seed.parquet #datasets/health/model=meta-llama-llama-2-7b-hf_size=1001/private_seed.parquet
 tp: 1
 pp: 1
-model_name: meta-llama/Meta-Llama-3-8B-Instruct #meta-llama/Llama-3.2-1B-Instruct #meta-llama/llama-2-7b-hf
+model_name: Qwen/Qwen3-4B-Instruct-2507 #meta-llama/Llama-3.2-1B-Instruct #meta-llama/llama-2-7b-hf
 
 sorting: "avg"
 train_steps: "sft"
 
 # Random generation
-csv_path: ???
-num_samples_rand_gen: 10000
-max_codes: 5
+csv_path: ../cim_synonymes.csv
+num_samples_rand_gen: 100000
+max_codes: 9
 max_kws: 1
 
 scripts:
   sft: training_steps/sft/train.py
   merge: training_steps/generation/merge_adapters.py
   generation: training_steps/generation/run.py
-  random_generation: training_steps/generation/random_gen.py
+  random_generation: training_steps/generation/random_gen_2.py
   score: training_steps/score/run.py
   filter: training_steps/filter/run.py
   classificaion: training_steps/classification/train.py
