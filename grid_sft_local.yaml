@@ -2,7 +2,7 @@
 defaults:
   - _self_
 
-size: 2766 #99
+size: 20995 #99
 size_sft: 20995 #99 #can be lower than size if you want sft on less samples
 size_generation: 2800 #number of prompts to use to generate sequences (4 answers for prompt by default)
 step: sft
