@@ -25,7 +25,7 @@ max_kws: 1
 
 scripts:
   sft: training_steps/sft/train.py
-  dpo: training_steps/alignment/dpo2.py
+  dpo: training_steps/alignment/dpo.py
   merge: training_steps/generation/merge_adapters.py
   generation: training_steps/generation/run.py
   random_generation: training_steps/generation/random_gen_2.py

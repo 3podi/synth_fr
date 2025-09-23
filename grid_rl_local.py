@@ -84,11 +84,11 @@ class Pipeline:
         self.train_steps = cfg.train_steps.split(" ")
         self.adapters = get_adapters_list(
             lora_path=cfg.lora_path,
-            run_id=cfg.run_id,
+            run_id=str(cfg.run_id),
             start_iter=cfg.start_it
         )
         self.group_id = cfg.group_id
-        self.run_id = cfg.run_id
+        self.run_id = str(cfg.run_id)
         self.job_mgr = JobManager()
         self.sts_model_path = self.cfg.sts_model.replace("/", "-")
         self.model_name = cfg.model_name.replace("/", "-")
@@ -120,7 +120,7 @@ class Pipeline:
             f"group_id={self.group_id} "
             f"run_id={self.run_id} "
             f"iteration={iter} "
-            f"dataset_size={self.cfg.size} "
+            f"dataset_size={self.cfg.size_generation} "
             f"'adapters_paths={to_str(self.adapters)}' "
             f"'dataset={escaped_dataset}' "
             f"'model_config.model_name_or_path={self.cfg.model_name}'"
@@ -208,7 +208,7 @@ class Pipeline:
         )
         self.job_mgr.submit(eval_pref_cmd)
 
-@hydra.main(config_path=".", config_name="grid_rl.yaml", version_base="1.3")
+@hydra.main(config_path=".", config_name="grid_rl_local.yaml", version_base="1.3")
 def main(cfg: DictConfig):
     pipeline = Pipeline(cfg)
     for iter in range(cfg.start_it, cfg.end_it):
