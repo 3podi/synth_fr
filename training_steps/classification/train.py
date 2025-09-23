@@ -8,6 +8,7 @@ from omegaconf import DictConfig, ListConfig, OmegaConf
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from transformers import Trainer, TrainingArguments
 from transformers.data.data_collator import DefaultDataCollator
+from transformers.trainer_utils import EvalPrediction
 import os
 import sys
 from sklearn.preprocessing import MultiLabelBinarizer
@@ -15,6 +16,7 @@ import numpy as np
 from typing import List, Dict, Any
 import json
 from collections import Counter
+import random
 
 import numpy as np
 from sklearn.metrics import (
@@ -23,7 +25,7 @@ from sklearn.metrics import (
     recall_score,
     hamming_loss,
     roc_auc_score,
-    jacc
+    jaccard_score
     )
 logger = logging.getLogger(__name__)
 
@@ -129,7 +131,8 @@ def filter_labels_by_frequency(label_counts: Dict[str, int], percentage: float, 
         num_labels_to_keep = int(len(sorted_labels) * percentage / 100)
     else:
         print(f'Keeping first {n_keep} labels')
-    
+        num_labels_to_keep = n_keep
+
     # Keep the most frequent labels
     filtered_labels = [label for label, freq in sorted_labels[:num_labels_to_keep]]
     
@@ -292,6 +295,35 @@ class MultiEvalSFTTrainer(WeightedTrainer):
             wandb.log({}, commit=True)
 
 
+def seed_everything(seed: int = 42):
+    """
+    Seed Python, NumPy, and PyTorch (if available) for reproducibility.
+    Also sets PYTHONHASHSEED and configures cudnn for determinism.
+
+    Args:
+        seed (int): The seed value to use. Default is 42.
+    """
+    # Python & OS-level seeds
+    random.seed(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
+
+    # NumPy
+    np.random.seed(seed)
+
+    try:
+        import torch
+
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+
+        # Ensure deterministic behavior in cuDNN (may slow things down a bit)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+    except ImportError:
+        pass  # torch not installed, ignore
+
+
 @hydra.main(version_base=None, config_path="./configs", config_name="default")
 def main(cfg: DictConfig):
     """
@@ -300,16 +332,18 @@ def main(cfg: DictConfig):
     Labels are automatically extracted from the training dataset and filtered by frequency.
     """
     
-    custom_run_id = cfg.run_id
-    os.environ["WANDB_RUN_ID"] = custom_run_id
+    #custom_run_id = cfg.run_id
+    #os.environ["WANDB_RUN_ID"] = custom_run_id
     wandb_config = OmegaConf.to_container(
         cfg,
         resolve=True,
         throw_on_missing=True,
     )
     
+    run_name = f"{cfg.dataset.split('/')[-1].replace(".parquet","")}_{cfg.dataset_size}_{cfg.label_filter_number}_{cfg.seed}"
     wandb.init(
         project="synth-fr",
+        name=run_name,
         tags=cfg.tags,
         config=wandb_config,
         job_type="training",
@@ -317,6 +351,8 @@ def main(cfg: DictConfig):
         settings=wandb.Settings(init_timeout=100),
     )
     
+
+    seed_everything(cfg.seed)
     print('Wandb run-id: ', wandb.run.id)
     print("Model: ", cfg.model_config.model_name_or_path)
 
@@ -453,7 +489,7 @@ def main(cfg: DictConfig):
     
     # Configure training arguments
     training_args = TrainingArguments(
-        run_name=cfg.run_id,
+        run_name=run_name,
         **cfg.training_arguments
     )
     
