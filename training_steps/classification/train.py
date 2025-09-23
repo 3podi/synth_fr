@@ -6,7 +6,7 @@ import wandb
 from datasets import Dataset
 from omegaconf import DictConfig, ListConfig, OmegaConf
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
-from transformers import Trainer, TrainingArguments
+from transformers import Trainer, TrainingArguments, EarlyStoppingCallback
 from transformers.data.data_collator import DefaultDataCollator
 from transformers.trainer_utils import EvalPrediction
 import os
@@ -84,6 +84,39 @@ def compute_metrics(eval_pred: EvalPrediction):
     precision_micro = precision_score(labels, preds, average="micro", zero_division=0)
     recall_micro = recall_score(labels, preds, average="micro", zero_division=0)
 
+    # --- Top-K F1 using sklearn's f1_score per sample ---
+    def f1_at_k(probs, labels, k):
+        n_samples, n_labels = probs.shape
+        sample_f1s = []
+
+        for i in range(n_samples):
+            # Get top-k indices
+            top_k_indices = np.argsort(probs[i])[-k:][::-1]  # descending
+
+            # Create top-k prediction vector
+            pred_topk = np.zeros(n_labels, dtype=int)
+            pred_topk[top_k_indices] = 1
+
+            true = labels[i]
+
+            # Handle edge case: no true labels and no predictions
+            if np.sum(true) == 0 and np.sum(pred_topk) == 0:
+                sample_f1s.append(1.0)
+            else:
+                # Use sklearn to compute F1 for this sample
+                sample_f1 = f1_score(true, pred_topk, zero_division=0)
+                sample_f1s.append(sample_f1)
+
+        return np.mean(sample_f1s) if len(sample_f1s) > 0 else 0.0
+
+    # Compute for k=3,5
+    top_k_values = [3, 5]
+    top_k_metrics = {}
+    for k in top_k_values:
+        if k <= probs.shape[1]:
+            f1_k = f1_at_k(probs, labels, k)
+            top_k_metrics[f"f1_at_{k}"] = f1_k
+
     return {
         "hamming_loss": h_loss,
         "jaccard_score_samples_avg": jaccard_macro,
@@ -93,7 +126,9 @@ def compute_metrics(eval_pred: EvalPrediction):
         "f1_micro": f1_micro,
         "precision_micro": precision_micro,
         "recall_micro": recall_micro,
+        **top_k_metrics,
     }
+
 
 class PrintAllLogsCallback:
     def on_log(self, args, state, control, logs, **kwargs):
@@ -110,7 +145,7 @@ def count_labels_in_dataset(df: pd.DataFrame, label_column: str) -> Dict[str, in
     for _, row in df.iterrows():
         if pd.notna(row[label_column]):
             # Split by whitespace and strip any extra spaces
-            labels = [label.strip()[:3] for label in str(row[label_column]).split() if label.strip()]
+            labels = [label.strip()[:3].lower() for label in str(row[label_column]).split() if label.strip()]
             label_counts.update(labels)
     
     return dict(label_counts)
@@ -156,7 +191,7 @@ def prepare_multilabel_data(df: pd.DataFrame, text_column: str, label_column: st
         if pd.isna(row[label_column]):
             labels = []
         else:
-            labels = [label.strip() for label in str(row[label_column]).split() if label.strip()]
+            labels = [label.strip()[:3].lower() for label in str(row[label_column]).split() if label.strip()]
             
         # Filter labels to only include those in our label list
         filtered_labels = [label for label in labels if label in label_list]
@@ -255,12 +290,6 @@ class MultiEvalSFTTrainer(WeightedTrainer):
     def evaluate(self, eval_dataset=None, ignore_keys=None, metric_key_prefix="eval"):
         # Run base evaluation on "main"
         main_metrics = super().evaluate(eval_dataset, ignore_keys, metric_key_prefix)
-        print("[DEBUG] Raw main_metrics:", main_metrics)
-        print("[DEBUG] Type of main_metrics:", type(main_metrics))
-        if isinstance(main_metrics, dict):
-            print("[DEBUG] Keys in main_metrics:", list(main_metrics.keys()))
-        else:
-            print("[DEBUG] main_metrics is not a dict!")
         all_metrics = dict(main_metrics)
 
         # Extra evals
@@ -504,6 +533,13 @@ def main(cfg: DictConfig):
     # Create data collator
     data_collator = DefaultDataCollator(return_tensors="pt")
 
+    # Early stopping callback
+    early_stopping_callback = EarlyStoppingCallback(
+        early_stopping_patience=5,    # number of evaluation calls to wait
+        early_stopping_threshold=0.0 # minimum change to qualify as improvement
+    )
+
+
     class_weights = compute_pos_weights(train_dataset)
     # Initialize trainer
     trainer = MultiEvalSFTTrainer(
@@ -516,10 +552,9 @@ def main(cfg: DictConfig):
         },
         tokenizer=tokenizer,
         data_collator=data_collator,
-        #callbacks=[PrintAllLogsCallback()],
+        callbacks=[early_stopping_callback],
         compute_metrics=compute_metrics,
         class_weights=class_weights,
-        #max_grad_norm=10.0
     )
     
     # Train the model
