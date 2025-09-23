@@ -255,6 +255,12 @@ class MultiEvalSFTTrainer(WeightedTrainer):
     def evaluate(self, eval_dataset=None, ignore_keys=None, metric_key_prefix="eval"):
         # Run base evaluation on "main"
         main_metrics = super().evaluate(eval_dataset, ignore_keys, metric_key_prefix)
+        print("[DEBUG] Raw main_metrics:", main_metrics)
+        print("[DEBUG] Type of main_metrics:", type(main_metrics))
+        if isinstance(main_metrics, dict):
+            print("[DEBUG] Keys in main_metrics:", list(main_metrics.keys()))
+        else:
+            print("[DEBUG] main_metrics is not a dict!")
         all_metrics = dict(main_metrics)
 
         # Extra evals
@@ -293,6 +299,8 @@ class MultiEvalSFTTrainer(WeightedTrainer):
 
         if "wandb" in globals() and wandb.run is not None:
             wandb.log({}, commit=True)
+    
+        return all_metrics
 
 
 def seed_everything(seed: int = 42):
