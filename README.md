@@ -58,7 +58,7 @@ There are **two separate Conda environments** depending on the stage of the pipe
 
 ### Preparing the Dataset for Supervised Fine-Tuning (SFT)
 
-Before running SFT, your dataset needs to be processed to extract keywords and format instructions correctly. The provided script automates this processing. (To be used with the preprocessing environment)
+Before running SFT, your dataset needs to be processed to extract keywords and format instructions correctly. The provided script automates this processing.
 
 #### Dataset Format
 
@@ -67,11 +67,13 @@ Before running SFT, your dataset needs to be processed to extract keywords and f
 * Example structure before processing:
 
 ```
-| text                                     | definitions                     |
-|-----------------------------------------|---------------------------------|
-| Patient presents with fever and cough.  | Infection, Respiratory disease  |
-| History of hypertension and diabetes.   | Hypertension, Diabetes          |
+| text                                     |
+|-----------------------------------------|
+| Patient presents with fever and cough.  |
+| History of hypertension and diabetes.   |
 ```
+
+If `--random_extraction` is used, you should also provide a pickled file with definitions.
 
 After processing, the dataset will have columns like:
 
@@ -93,8 +95,8 @@ python preprocessing_sft.py \
 ```
 
 * `--parquet_dir`: Directory containing your raw Parquet dataset files.
-* `--strings_path`: Path to the pickled definitions used for keyword extraction.
-* `--random_extraction`: Optional. If set, 50% of entries use extracted keywords, 50% use definitions.
+* `--strings_path`: Path to the pickled definitions (required for extracting keywords).
+* `--random_extraction`: Optional. If set, 50% of entries use extracted keywords, 50% use definitions provided with the input text.
 
 #### Output
 
@@ -108,6 +110,7 @@ datasets/health/sft/
 ```
 
 These processed Parquet files can then be directly fed into the SFT training script.
+
 
 
 ### Setup Dataset Repository
