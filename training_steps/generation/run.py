@@ -89,10 +89,8 @@ def generate_responses(model, prompts, num_sequences):
 def main():
     args = parse_arguments()
 
-    # we use a contextual path only because we deploy the script via skypilot
     print("Reading parquet")
     df = pd.read_parquet(args.dataset)
-    #df = df.sample(n=args.num_prompts, random_state=42)
     # Extract the specific column
     prompts = df["instruction"][:args.num_prompts]
 
@@ -103,7 +101,6 @@ def main():
         pipeline_parallel_size=args.pp,
         gpu_memory_utilization=0.95,
         max_model_len=16384
-        #enable_chunked_prefill=False,
     )
     # Generate multiple responses per prompt
     print("Generating responses")

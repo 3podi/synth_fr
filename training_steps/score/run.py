@@ -63,8 +63,6 @@ def compute_similarities(model_name: str, texts1: List[str], texts2: List[str]) 
         List of similarity scores
     """
 
-    #model = SentenceTransformer(model_name, trust_remote_code=True).eval()
-    #model = SentenceTransformer('Alibaba-NLP/gte-multilingual-base', trust_remote_code=True).eval()
     model = SentenceTransformer('FremyCompany/BioLORD-2023-M', trust_remote_code=True).eval()
     
     # Initialize tokenizer using the same model
@@ -123,7 +121,6 @@ def compute_similarities(model_name: str, texts1: List[str], texts2: List[str]) 
     gc.collect()
     torch.cuda.empty_cache()
     return final_scores
-    #return global_scores
 
 def initialize_wandb(args: argparse.Namespace) -> Any:
     """
@@ -246,13 +243,7 @@ def compute_educational_score(sts_model, tp: int, responses: List[str]) -> dict:
         model=sts_model,
         dtype='float16',
         max_model_len=5000,
-        #max_num_batched_tokens= 60000,
-        #max_num_seqs=64,
         gpu_memory_utilization=0.95,
-        #enable_chunked_prefill=True,
-        #kv_cache_dtype= 'fp8e4b15', #'fp8_e5m2',
-        #enable_prefix_caching=True,
-        enforce_eager=True,
         tensor_parallel_size=tp,
         pipeline_parallel_size=1
     )

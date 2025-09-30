@@ -13,7 +13,6 @@ sft_config:
   lr_scheduler_type: "cosine"
   
 
-#dataset: datasets/health/model=xz97-AlpaCare-llama2-13b_t=0.7_size=60000/public_seed.parquet
-dataset: datasets/health/sft/sft_dataset.parquet
+dataset: ???
 tags: [sft, health, keywords]
 adapters_paths: lora/

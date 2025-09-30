@@ -212,8 +212,6 @@ def sample_keywords(csv_path: str, num_samples: int = 10, max_codes: int = 1, ma
     df = pd.DataFrame(data)    
     return df
 
-def make_regex():
-    return (r".*(Motif d'hospitalisation).*?(Condition principal d'admission).*?(Antécédent).*?(Mode de vie).*?(Histoire de la maladie).*?(Examen clinique).*?(Examens complémentaires).*?(Évolution pendant l'hospitalisation).*?(Conclusion).*?")
 
 def generate_responses(keywords, model_name: str, tp: int = 1, pp: int = 1):
     
@@ -222,7 +220,6 @@ def generate_responses(keywords, model_name: str, tp: int = 1, pp: int = 1):
         model=model_name,
         tensor_parallel_size=tp,
         pipeline_parallel_size=pp,
-        #enable_chunked_prefill=True,
         gpu_memory_utilization=0.95,
         max_model_len=16384
     )
@@ -249,7 +246,6 @@ def generate_responses(keywords, model_name: str, tp: int = 1, pp: int = 1):
     response = llm.generate(
         prompts,
         sampling_params=sampling_params,
-        #guided_options_request=dict(guided_regex=make_regex())
     )
     all_responses.extend([output.outputs[0].text for output in response])
 

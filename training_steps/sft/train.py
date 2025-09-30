@@ -114,30 +114,15 @@ def main(cfg: DictConfig):
     def format_and_tokenize(example):
         return tokenizer(
             example["text"],
-            padding="max_length",
-            truncation=True,
-            max_length=cfg.sft_config.max_seq_length,
-        )
-
-    def format_and_tokenize2(example):
-        return tokenizer(
-            example["text"],
             #padding="max_length",
             truncation=False,
             #max_length=cfg.sft_config.max_seq_length,
         )
     
-    
-    #params_to_optimize = [p for p in model.parameters() if p.requires_grad]    
-    #num_params = sum(p.numel() for p in params_to_optimize)
-    #num_params_mb = sum(p.numel() * p.element_size() for p in params_to_optimize) / (1024**2)
-    #print(f"Trainable parameters: {num_params:,}")
-    #print(f"Total size: {num_params_mb:.2f} MB")
-
     dataset = Dataset.from_pandas(pd.read_parquet(cfg.dataset).head(cfg.dataset_size))
     
     dataset = dataset.map(lambda x: {"text": x["instruction"] + x["response"]})
-    dataset = dataset.map(format_and_tokenize2, batched=False)
+    dataset = dataset.map(format_and_tokenize, batched=False)
     
     dataset = dataset.map(
         lambda x: chunk_tokens_with_padding(x, tokenizer.pad_token_id, chunk_size=cfg.sft_config.max_seq_length, stride=512),
@@ -173,19 +158,6 @@ def main(cfg: DictConfig):
         data_collator=data_collator,
     )
     
-    #train_dataloader = trainer.get_train_dataloader()
-    #first_batch = next(iter(train_dataloader))
-    #print('First batch:', first_batch)
-    
-    #print(first_batch['input_ids'][0])
-    #print(first_batch['labels'][0])
-    #print(len(first_batch['input_ids'][0]))
-    #print(len(first_batch['labels'][0]))    
-    
-    #input_ids_batch = first_batch["input_ids"] 
-    #decoded_texts = [tokenizer.decode(input_ids, skip_special_tokens=False) for input_ids in input_ids_batch]
-    #print(decoded_texts)
-
     trainer.train()
     trainer.save_model(cfg.sft_config.output_dir)
 
