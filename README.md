@@ -161,7 +161,7 @@ print(outputs[0]["generated_text"])
 You can generate synthetic medical reports using vLLM with the provided script. Replace the paths and model name as needed:
 
 ```bash
-python tranining_scripts/generation/random_gen.py.py \
+python tranining_scripts/generation/random_gen.py \
     --model <hugging-face-model-or-local-path> \
     --csv_path /path/to/csv_with_codes.csv \
     --output_path /path/to/save/output_folder \
