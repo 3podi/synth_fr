@@ -56,6 +56,60 @@ There are **two separate Conda environments** depending on the stage of the pipe
    conda env create -f environment.yml
    conda activate synth-fr
 
+### Preparing the Dataset for Supervised Fine-Tuning (SFT)
+
+Before running SFT, your dataset needs to be processed to extract keywords and format instructions correctly. The provided script automates this processing. (To be used with the preprocessing environment)
+
+#### Dataset Format
+
+* Input dataset should be in **Parquet** format.
+* Each file should contain a text column (or `input`/`response`) to extract keywords from.
+* Example structure before processing:
+
+```
+| text                                     | definitions                     |
+|-----------------------------------------|---------------------------------|
+| Patient presents with fever and cough.  | Infection, Respiratory disease  |
+| History of hypertension and diabetes.   | Hypertension, Diabetes          |
+```
+
+After processing, the dataset will have columns like:
+
+```
+| instruction                                           | keywords                  | response                          |
+|------------------------------------------------------|---------------------------|-----------------------------------|
+| ...prompt with {keywords} replaced...                | Infection, Respiratory ...| Patient presents with fever ...    |
+```
+
+#### Running the Processing Script
+
+Use the following command to process your dataset:
+
+```bash
+python preprocessing_sft.py \
+    --parquet_dir /path/to/parquet_files \
+    --strings_path /path/to/definitions.pkl \
+    [--random_extraction]
+```
+
+* `--parquet_dir`: Directory containing your raw Parquet dataset files.
+* `--strings_path`: Path to the pickled definitions used for keyword extraction.
+* `--random_extraction`: Optional. If set, 50% of entries use extracted keywords, 50% use definitions.
+
+#### Output
+
+* Processed files will be saved to:
+
+```
+datasets/health/sft/
+    ├─ processed_file_1.parquet
+    ├─ processed_file_2.parquet
+    └─ ...
+```
+
+These processed Parquet files can then be directly fed into the SFT training script.
+
+
 ### Setup Dataset Repository
 
 You can create the dataset folder structure and copy the seed files using the setup script. Replace the paths with your own files and model name:
