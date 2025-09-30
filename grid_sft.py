@@ -115,7 +115,11 @@ class Pipeline:
             f"--OUTPUT_PATH {self.base_model_path()} "
             f"--RUN_ID {self.run_id} "
             f"--N_PROMPTS {self.cfg.size_generation} "
-            f"--MODEL {self.cfg.model_name}"
+            f"--MODEL {self.cfg.model_name} "
+            f"--CSV_PATH {self.cfg.csv_path} "
+            f"--RAND_NUM_SAMPLES {self.cfg.num_samples_rand_gen} "
+            f"--RAND_MAX_CODES {self.cfg.max_codes} "
+            f"--RAND_MAX_KWS {self.cfg.max_kws} "
         )
         self.job_mgr.submit(cmd)
 
@@ -135,27 +139,17 @@ class Pipeline:
         path = f"{self.base_model_path()}/model={self.sts_model_path}_scored.parquet"
         self.job_mgr.submit(f"{self.cfg.scripts.filter} --INPUT_FILE {path}")
 
-    def run_eval(self):
-        step = self.train_steps[-1]
-        path = f"{self.output_model_path()}/model={self.sts_model_path}_scored_eval.parquet"
-        out_path = (
-            f"datasets/health/eval/model_outputs/"
-            f"model={self.run_id}_size={self.cfg.size}_step={step}"
-        )
-        eval_gen_cmd = (
-            f"{self.cfg.scripts.eval_gen} --DOWNSTREAM_DS_PATH {path} "
-            f"--OUTPUT_PATH {out_path} --GROUP_ID {self.group_id}"
-        )
-        self.job_mgr.submit(eval_gen_cmd)
+    def run_classification(self):
+        script = self.cfg.scripts["classification"]
+        dataset =  f"{self.base_model_path()}/random_dataset.parquet"
 
-        eval_pref_cmd = (
-            f"{self.cfg.scripts.eval_preference} --MODEL_ID {self.run_id} --STEP {step} "
-            f"--SIZE {self.cfg.size} "
-            f"--SUFFIX_RUN_NAME {'-'.join(self.train_steps)}-{self.cfg.sorting} "
-            f"--GROUP_ID {self.group_id}"
-        )
-        self.job_mgr.submit(eval_pref_cmd)
+        run_id = self.run_id #if idx == 0 else str(uuid.uuid4())[:7]
 
+        cmd = (
+            f"--export=ALL,WANDB_RUN_ID={run_id} {script} "
+            f"--HYDRA_ARGS 'dataset={dataset}'"
+        )
+        self.job_mgr.submit(cmd)
 
 @hydra.main(config_path=".", config_name="grid_sft.yaml", version_base="1.3")
 def main(cfg: DictConfig):
@@ -164,7 +158,7 @@ def main(cfg: DictConfig):
     pipeline.run_generation()
     pipeline.run_score()
     pipeline.run_filter()
-    #pipeline.run_eval()
+    #pipeline.run_classification()
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 #SBATCH -t 3-00:00:00
 #SBATCH --gres=gpu:v100:1   # change to >1 if you want multiple GPUs
 #SBATCH -N1
-#SBATCH -c4
+#SBATCH -c1
 #SBATCH --mem=40000
 #SBATCH -p gpuV100  
 #SBATCH -w bbs-edsg28-p004

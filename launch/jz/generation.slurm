@@ -55,6 +55,22 @@ while [[ "$#" -gt 0 ]]; do
     N_PROMPTS="$2"
     shift
     ;;
+  --CSV_PATH)
+    CSV_PATH="$2"
+    shift
+    ;;
+  --RAND_NUM_SAMPLES)
+    RAND_NUM_SAMPLES="$2"
+    shift
+    ;;
+  --RAND_MAX_CODES)
+    RAND_MAX_CODES="$2"
+    shift
+    ;;
+  --RAND_MAX_KWS)
+    RAND_MAX_KWS="$2"
+    shift
+    ;;
   *)
     echo "Unknown parameter passed: $1"
     exit 1
@@ -84,5 +100,16 @@ python training_steps/generation/run.py --dataset "$DATASET_PATH" \
   --model "$MERGE_OUTPUT_PATH" \
   --output_path "$OUTPUT_PATH" \
   --num_prompts "$N_PROMPTS" \
-  --tp "$SLURM_GPUS_ON_NODE" \
-  --pp "$SLURM_NNODES"
+  #--tp "$SLURM_GPUS_ON_NODE" \
+  #--pp "$SLURM_NNODES"
+
+echo "Launching random generation script..."
+python training_steps/generation/random_gen.py \
+  --model "$MERGE_OUTPUT_PATH" \
+  --csv_path "$CSV_PATH" \
+  --output_path "$OUTPUT_PATH" \
+  --max_codes "$RAND_MAX_CODES" \
+  --max_kws "$RAND_MAX_KWS" \
+  --num_samples "$RAND_NUM_SAMPLES" \
+  #--tp "$SLURM_GPUS_ON_NODE" \
+  #--pp "$SLURM_NNODES"

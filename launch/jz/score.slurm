@@ -87,7 +87,7 @@ python training_steps/score/run.py \
   --sts_model "$STS_MODEL" \
   --public_dataset "$OUTPUT_PATH" \
   --private_dataset "$PRIVATE_DATASET" \
-  --tp "$SLURM_GPUS_ON_NODE" \
+  #--tp "$SLURM_GPUS_ON_NODE" \
   --output_path "$OUTPUT_PATH" \
   --n "$N" \
   --wdb_id "$WDB_ID" \
