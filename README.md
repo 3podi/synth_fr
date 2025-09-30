@@ -156,6 +156,39 @@ outputs = generator(prompt, max_length=200, num_return_sequences=1, do_sample=Tr
 print(outputs[0]["generated_text"])
 ```
 
+### vLLM Inference
+
+You can generate synthetic medical reports using vLLM with the provided script. Replace the paths and model name as needed:
+
+```bash
+python tranining_scripts/generation/random_gen.py.py \
+    --model <hugging-face-model-or-local-path> \
+    --csv_path /path/to/csv_with_codes.csv \
+    --output_path /path/to/save/output_folder \
+    --num_samples 10 \
+    --max_codes 5 \
+    --max_kws 1 \
+    --tp 1 \
+    --pp 1
+```
+
+### Launching the SLURM Script
+
+You can submit the SLURM script to run large-scale generation or training on an HPC cluster. Replace the arguments with your dataset, model, and output paths as needed:
+
+```bash
+sbatch launch/jz/random_gen.slurm \
+    --DATASET_PATH /path/to/dataset \
+    --MODEL <hugging-face-model-or-local-path> \
+    --OUTPUT_PATH /path/to/save/output \
+    --CSV_PATH /path/to/codes.csv \
+    --RAND_NUM_SAMPLES 100 \
+    --RAND_MAX_CODES 5 \
+    --RAND_MAX_KWS 1
+```
+
+
+
 > **Note:** On [Hugging Face](https://huggingface.co/), you can find:  
 > - **LoRA modules** for every DPO step  
 > - **Datasets of 50K samples** corresponding to each DPO step  
