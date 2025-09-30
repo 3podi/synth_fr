@@ -120,7 +120,7 @@ These processed Parquet files can then be directly fed into the SFT training scr
 You can create the dataset folder structure and copy the seed files using the setup script. Replace the paths with your own files and model name:
 
 ```bash
-python setup_dataset.py \
+python setup.py \
     --model_name <hugging-face-model-path> \
     --private_seed /path/to/private_seed.parquet \
     --public_seed /path/to/public_seed.parquet \
