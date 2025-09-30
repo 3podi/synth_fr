@@ -75,8 +75,6 @@ Before running SFT, your dataset needs to be processed to extract keywords and f
 | History of hypertension and diabetes.   |
 ```
 
-If `--random_extraction` is used, you should also provide a pickled file with definitions.
-
 After processing, the dataset will have columns like:
 
 ```
@@ -99,6 +97,8 @@ python preprocessing_sft.py \
 * `--parquet_dir`: Directory containing your raw Parquet dataset files.
 * `--strings_path`: Path to the pickled definitions (required for extracting keywords).
 * `--random_extraction`: Optional. If set, 50% of entries use extracted keywords, 50% use definitions provided with the input text.
+
+If `--random_extraction` is used, every input should have a 'definitions' column which represent the keywords to use.
 
 #### Output
 
