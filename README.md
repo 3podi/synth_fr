@@ -151,6 +151,8 @@ Use the **grid scripts** together with SLURM submission files for large-scale tr
   ```bash
   python grid_rl.py --config grid_rl.yaml
   ```
+  The important parameters (private_path, model_name, sts_model, size_sft) are the same as for SFT.
+
 
 Other jobs in `launch/jz/` include:
 - `generation.slurm`
