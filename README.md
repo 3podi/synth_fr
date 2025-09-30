@@ -141,6 +141,11 @@ Use the **grid scripts** together with SLURM submission files for large-scale tr
   ```bash
   python grid_sft.py --config grid_sft.yaml
   ```
+* `private_path`: Path to the private seed dataset (used for generating sequences).  
+* `model_name`: Hugging Face model name or local model path used for training.  
+* `sts_model`: LLM used as a judge model for scoring and evaluation.  
+* `size_sft`: Number of samples to use for SFT (can be smaller than total dataset size).    
+
 
 - **Direct Preference Optimization (DPO)**
   ```bash
