@@ -21,9 +21,9 @@ Vous agissez en tant qu'IA médicale spécialisée. Votre tâche consiste à ré
 {keywords}
 ### Output
 """
-with open('../anh3.txt', 'r') as f:
-    PROMPT = f.read()
-print('Using prompt: ', PROMPT)
+#with open('../anh3.txt', 'r') as f:
+#    PROMPT = f.read()
+#print('Using prompt: ', PROMPT)
 
 
 def remove_accents(text):
@@ -324,7 +324,7 @@ if __name__ == "__main__":
     
     df['response'] = responses
     
-    output_path = os.path.join(output_dir, "random_dataset_2.parquet")
+    output_path = os.path.join(output_dir, "random_dataset_2_prova.parquet")
     df.to_parquet(output_path)
 
     
