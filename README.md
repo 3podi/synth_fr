@@ -66,9 +66,18 @@ python setup_dataset.py \
     --private_seed /path/to/private_seed.parquet \
     --public_seed /path/to/public_seed.parquet \
     --dataset_size 100
+```
 
 ### Training with SLURM (HPC clusters)
+
 Use the **grid scripts** together with SLURM submission files for large-scale training:
+
+**Supervised Fine-Tuning (SFT)**
+
+```bash
+python grid_sft.py --config grid_sft.yaml
+```
+
 
 - **Supervised Fine-Tuning (SFT)**
   ```bash
