@@ -65,7 +65,7 @@ python setup_dataset.py \
     --model_name <hugging-face-model-path> \
     --private_seed /path/to/private_seed.parquet \
     --public_seed /path/to/public_seed.parquet \
-    --dataset_size 100
+    --dataset_size <dataset_size>
 ```
 
 ### Training with SLURM (HPC clusters)
