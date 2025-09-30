@@ -88,7 +88,7 @@ After processing, the dataset will have columns like:
 Use the following command to process your dataset:
 
 ```bash
-python preprocessing_sft.py \
+python preprocessing/sft_preprocessing.py \
     --parquet_dir /path/to/parquet_files \
     --strings_path /path/to/definitions.pkl \
     [--random_extraction]
