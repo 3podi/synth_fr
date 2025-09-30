@@ -127,6 +127,12 @@ python setup_dataset.py \
     --dataset_size <dataset_size>
 ```
 
+**Note:**
+
+* `private_seed` refers to documents that could contain private information.
+* `public_seed` refers to privacy-free documents that can be safely used for supervised fine-tuning (SFT).
+
+
 ### Training with SLURM (HPC clusters)
 
 Use the **grid scripts** together with SLURM submission files for large-scale training:
