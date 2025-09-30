@@ -60,12 +60,12 @@ There are **two separate Conda environments** depending on the stage of the pipe
 
 You can create the dataset folder structure and copy the seed files using the setup script. Replace the paths with your own files and model name:
 
-    ```bash
-    python setup_dataset.py \
-        --model_name <hugging-face-model-path> \
-        --private_seed /path/to/private_seed.parquet \
-        --public_seed /path/to/public_seed.parquet \
-        --dataset_size 1000
+```bash
+python setup_dataset.py \
+    --model_name <hugging-face-model-path> \
+    --private_seed /path/to/private_seed.parquet \
+    --public_seed /path/to/public_seed.parquet \
+    --dataset_size 100
 
 ### Training with SLURM (HPC clusters)
 Use the **grid scripts** together with SLURM submission files for large-scale training:
