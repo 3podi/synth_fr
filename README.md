@@ -239,7 +239,7 @@ python tranining_scripts/generation/random_gen.py \
 
 ### Launching the SLURM Script
 
-You can submit the SLURM script to run large-scale generation or training on an HPC cluster. Replace the arguments with your dataset, model, and output paths as needed:
+You can submit the SLURM script to run large-scale generation on an HPC cluster. Replace the arguments with your dataset, model, and output paths as needed:
 
 ```bash
 sbatch launch/jz/random_gen.slurm \
