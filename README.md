@@ -4,6 +4,8 @@
 **Synth-FR** is a framework for generating, training, and evaluating large language models on **synthetic French medical reports**.  
 The project’s primary goal is to create a high-quality synthetic corpus for tasks such as **ICD-10 coding** using modern fine-tuning and reinforcement learning techniques.
 
+The pipeline involves pretraining on a seed of privacy-free documents, and then generating new reports from medical keywords extracted from, ideally, even private documents. For example, inside a hospital where private documents exist, they can be used to provide feedback to further improve generation without exposing sensitive data.
+
 The repo includes pipelines for:
 - **Supervised Fine-Tuning (SFT)**
 - **Generation and scoring/filtering reports**
