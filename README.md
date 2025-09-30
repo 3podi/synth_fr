@@ -137,13 +137,6 @@ python setup.py \
 
 Use the **grid scripts** together with SLURM submission files for large-scale training:
 
-**Supervised Fine-Tuning (SFT)**
-
-```bash
-python grid_sft.py --config grid_sft.yaml
-```
-
-
 - **Supervised Fine-Tuning (SFT)**
   ```bash
   python grid_sft.py --config grid_sft.yaml
