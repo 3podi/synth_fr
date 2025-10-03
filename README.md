@@ -147,7 +147,7 @@ datasets/health/sft/
 
 These processed Parquet files can then be directly fed into the SFT training script.
 
-
+---
 ### Training with SLURM (HPC clusters)
 
 Use the **grid scripts** together with SLURM submission files for large-scale training:
