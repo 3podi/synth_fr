@@ -263,4 +263,53 @@ sbatch launch/jz/random_gen.slurm \
 > These resources allow you to experiment with any stage of the pipeline.
 
 
+### Example Generated Synthetic Report
+
+```text
+### Motif d’hospitalisation
+Hospitalisation pour prise en charge d’une fracture ouverte du pouce gauche suite à un accident domestique. Contusion associée du doigt index gauche avec lésion de l’ongle.
+
+### Antécédents
+Patiente de 42 ans, sans antécédents médicaux ou chirurgicaux notables. Allergie connue à la pénicilline (éruption cutanée).
+
+### Mode de vie
+Non-fumeuse, consommation d’alcool occasionnelle (1 à 2 verres de vin par semaine). Profession : enseignante. Pratique une activité physique modérée (marche, yoga). Vit en couple, sans enfants. Situation sociale stable.
+
+### Histoire de la maladie
+La patiente rapporte être tombée dans son domicile le 15/07/2024, entraînant une chute sur la main gauche. Elle décrit une douleur immédiate et intense au niveau du pouce gauche, associée à une plaie cutanée. Elle s’est rendue aux urgences le même jour.
+
+### Examen clinique
+**Constantes vitales (15/07/2024) :** TA 120/75 mmHg, FC 88 bpm, FR 16/min, SpO2 98% AA, T° 36.8°C.  
+**Examen physique (15/07/2024) :**
+* **Inspection :** Plaie d’environ 2 cm de long, située sur la face radiale de la base du pouce gauche, avec saignement actif modéré. Déformation du pouce gauche. Contusion du doigt index gauche avec hématome sous-unguéal et avulsion partielle de l’ongle.
+* **Palpation :** Mobilité douloureuse et crépitante au niveau de la base du pouce gauche. Douleur à la palpation du doigt index gauche.
+* **Neurovasculaire :** Sensibilité conservée au niveau du pouce et de l’index gauche. Pouls radial et ulnaire palpables. Absence de déficit moteur majeur initial.
+* **Autres :** Absence de signe de syndrome compartimental.
+
+### Examens complémentaires
+* **Radiographie du poignet et de la main gauche (15/07/2024) :** Fracture ouverte comminutive de la base du premier métacarpien gauche, avec déplacement important des fragments. Fracture non déplacée du phénix du doigt index gauche.
+* **Biologie (15/07/2024) :** NFS : GB 12 500/mm³, Hémoglobine 13.5 g/dL, Plaquettes 350 000/mm³. CRP : 45 mg/L. Ionogramme et fonction rénale normaux.
+* **ECG (15/07/2024) :** Rythme sinusal, fréquence 88 bpm, sans anomalies significatives.
+
+### Évolution pendant l'hospitalisation
+**Prise en charge diagnostique :** Diagnostic confirmé de fracture ouverte du pouce gauche et contusion du doigt index gauche avec lésion de l’ongle. Légère leucocytose et CRP élevée.  
+**Conclusions des examens complémentaires :** Fracture comminutive nécessitant prise en charge chirurgicale. Fracture de l’index sans déplacement.  
+**Pathologies finales retenues :** Fracture ouverte comminutive de la base du premier métacarpien gauche. Contusion du doigt index gauche avec hématome sous-unguéal et avulsion partielle de l’ongle.  
+**Prise en charge thérapeutique :**
+* **15/07/2024 :** Nettoyage et débridement chirurgical de la plaie sous anesthésie loco-régionale. Pansement chirurgical. Antibiothérapie IV par Céfazoline 2g/jour. Antalgiques (Paracétamol 1g x3/jour, Tramadol 100mg si besoin).
+* **17/07/2024 :** Ostéosynthèse par voie ouverte (fixation par plaque et vis). Fermeture de la plaie. Pansement chirurgical. Antibiothérapie IV pendant 48h puis orale (Amoxicilline/Ac. clavulanique 1g x3/jour).
+* **Suivi :** Surveillance clinique quotidienne, pansements réguliers, kinésithérapie débutée le 18/07/2024.
+
+**Critères de sortie :**
+* Absence de fièvre.
+* Pansement propre et sec.
+* Douleur contrôlée par antalgiques oraux.
+* Bonne mobilité des doigts et du poignet.
+* Compréhension des consignes de suivi et de rééducation.
+
+### Conclusion
+Patiente de 42 ans admise pour fracture ouverte du pouce gauche et contusion du doigt index gauche suite à une chute. Prise en charge chirurgicale avec ostéosynthèse et débridement. Évolution favorable. Sortie le 20/07/2024 avec suivi ambulatoire prévu.
+
+
+
 
