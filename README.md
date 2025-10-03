@@ -209,11 +209,11 @@ model = AutoModelForCausalLM.from_pretrained(model_name)
 generator = pipeline("text-generation", model=model, tokenizer=tokenizer)
 
 # Example prompt
-prompt = "### Instruction
+prompt = """### Instruction
 Vous agissez en tant qu'IA médicale spécialisée. Votre tâche consiste à rédiger un rapport d'hospitalisation fictif complet et réaliste. Le document doit présenter une évolution clinique cohérente avec une terminologie médicale précise, tout en respectant scrupuleusement la séquence imposée des mots-clés. Retournez uniquement le rapport.
 ### Keywords
 {keywords}
-### Output"
+### Output"""
 
 keywords = ", ".join(["Infection virale des voies respiratoires", "Maladie inflammatoire des voies respiratoires"])
 prompt = prompt.replace("{keywords}", keywords)
