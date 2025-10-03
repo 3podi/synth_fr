@@ -197,7 +197,7 @@ After training and uploading the model to [🤗 Hugging Face Hub](https://huggin
 ```python
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
-model_name = "3podi/xxxxx"
+model_name = "3podi/Qwen3-4B-Instruct-2507-synth-fr"
 
 # Load model and tokenizer
 tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -261,15 +261,4 @@ sbatch launch/jz/random_gen.slurm \
 > These resources allow you to experiment with any stage of the pipeline.
 
 
-| Experiment        | Step0   | DPO1   | DPO2   | DPO3   | DPO3 vs Step0 (Rel. Impr.) |
-|-------------------|---------|--------|--------|--------|-----------------------------|
-| dataset_10k_50    | 0.2498  | 0.2937 | 0.3024 | **0.3171** | **+26.9%**                 |
-| dataset_10k_100   | 0.1747  | 0.1965 | 0.2020 | **0.2384** | **+36.5%**                 |
-| dataset_10k_20    | 0.3893  | 0.4223 | **0.4215** | 0.4180 | +7.4%                       |
-| dataset_20k_50    | 0.2988  | 0.3264 | **0.3341** | 0.0702 | **–76.5%** (collapse)       |
-| dataset_50k_20    | 0.4450  | 0.4614 | **0.4612** | 0.4550 | +2.3%                       |
-| dataset_20k_100   | 0.1954  | 0.2298 | 0.2096 | **0.2849** | **+45.8%**                 |
-| dataset_50k_50    | 0.3256  | 0.3507 | 0.3845 | **0.3828** | **+17.6%**                 |
-| dataset_20k_20    | **0.4383** | 0.4569 | 0.4476 | 0.4376 | –0.2%                       |
-| dataset_50k_100   | 0.2302  | 0.2675 | 0.2995 | **0.3159** | **+37.2%**                 |
 
