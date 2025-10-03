@@ -44,7 +44,7 @@ synth_fr-main/
 There are **two separate Conda environments** for Linux systems depending on the stage of the pipeline:
 
 1. **Dataset Preparation Environment**  
-   Defined in `xxxx.yml`.  
+   Defined in `environment_preprocessing.yml`.  
    This environment is used for **preprocessing tasks**, such as keyword extraction and dataset preparation.
 
    ```bash
