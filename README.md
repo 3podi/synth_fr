@@ -214,8 +214,6 @@ Results on 10k dataset
 | 50    | 0.2498 | 0.2937     | 0.3024 | **0.3171** | **+26.9%**                 |
 | 100   | 0.1747 | 0.1965     | 0.2020 | **0.2384** | **+36.5%**                 |
 
----
-
 Results on 20k dataset
 
 | top_k | Step0  | DPO1       | DPO2   | DPO3       | DPO3 vs Step0 (Rel. Impr.) |
@@ -224,8 +222,6 @@ Results on 20k dataset
 | 50    | 0.2988 | 0.3264     | 0.3341 | **0.3473** | **+16.2%**                 |
 | 100   | 0.1954 | 0.2298     | 0.2096 | **0.2849** | **+45.8%**                 |
 
----
-
 Results on 50k dataset
 
 | top_k | Step0  | DPO1       | DPO2       | DPO3       | DPO3 vs Step0 (Rel. Impr.) |
@@ -233,8 +229,6 @@ Results on 50k dataset
 | 20    | 0.4450 | **0.4614** | 0.4612     | 0.4550     | +2.3%                      |
 | 50    | 0.3256 | 0.3507     | **0.3845** | 0.3828     | **+17.6%**                 |
 | 100   | 0.2302 | 0.2675     | 0.2995     | **0.3159** | **+37.2%**                 |
-
----
 
 Findings
 - Repeated DPO iterations improve results, with the biggest relative gains at **higher top-k (100)**.  
