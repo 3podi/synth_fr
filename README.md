@@ -20,18 +20,19 @@ This framework is designed for use on **HPC clusters** with SLURM job scheduling
 
 ```
 synth_fr-main/
-  ├── xxxx.yml                # Preprocessing / keywords extraction environment
-  ├── environment.yml         # Training/generation conda environment definition
-  ├── grid_*.py/.yaml         # Experiment pipelines scipts and configs (SFT, RL, etc.)
-  ├── launch/jz/              # SLURM job scripts
-  ├── training_steps/         # Training/generation scripts
-  │   ├── sft/                # Pre-Training (SFT)
-  │   ├── generation/         # Reports Generation
-  │   ├── score/              # Reports scoring (Cosine similarity, LLM as a Judge)
-  │   ├── filter/             # Building DPO dataset
-  │   ├── alignment/          # Alignment methods (DPO)
-  │   └── classification/     # Classification training script
-  └── README.md               # Project documentation
+  ├── environment_preprocessing.yml # Preprocessing / keywords extraction environment
+  ├── environment.yml               # Training/generation conda environment definition
+  ├── setup.py                      # Set up dataset and downloading from hf
+  ├── grid_*.py/.yaml               # Experiment pipelines scipts and configs (SFT, RL, etc.)
+  ├── launch/jz/                    # SLURM job scripts
+  ├── training_steps/               # Training/generation scripts
+  │   ├── sft/                      # Pre-Training (SFT)
+  │   ├── generation/               # Reports Generation
+  │   ├── score/                    # Reports scoring (Cosine similarity, LLM as a Judge)
+  │   ├── filter/                   # Building DPO dataset
+  │   ├── alignment/                # Alignment methods (DPO)
+  │   └── classification/           # Classification training script
+  └── README.md                     # Project documentation
 ```
 
 ---
@@ -47,16 +48,36 @@ There are **two separate Conda environments** depending on the stage of the pipe
    This environment is used for **preprocessing tasks**, such as keyword extraction and dataset preparation.
 
    ```bash
-   conda env create -f xxxx.yml
+   conda env create -f environment_preprocessing.yml -n synth-fr-prep
+   python -m spacy download fr_core_news_sm
    conda activate synth-fr-prep
 
 2. **Pipeline Environment**
-   Defined in `environment.yml` and is used for **running the main pipelines**.
+   Defined in `environment.yml` and is used for running anything else.
 
    ```bash
-   # Create and activate the pipeline environment
-   conda env create -f environment.yml
+   conda env create -f environment.yml -n synth-fr
    conda activate synth-fr
+
+
+### Setup Dataset Repository
+
+You can create the dataset folder structure and copy the seed files using the setup script. Replace the paths with your own files and model name:
+
+```bash
+python setup.py \
+    --model_name <hugging-face-model-path> \
+    --private_seed /path/to/private_seed.parquet \
+    --public_seed /path/to/public_seed.parquet \
+    --dataset_size <dataset_size>
+```
+
+**Note:**
+
+* `private_seed` refers to documents that could contain private information.
+* `public_seed` refers to privacy-free documents that can be safely used for supervised fine-tuning (SFT).
+* By default 2 files required for extracting keywords / generation are downloaded from HF.
+
 
 ### Preparing the Dataset for Supervised Fine-Tuning (SFT)
 
@@ -112,25 +133,6 @@ datasets/health/sft/
 ```
 
 These processed Parquet files can then be directly fed into the SFT training script.
-
-
-
-### Setup Dataset Repository
-
-You can create the dataset folder structure and copy the seed files using the setup script. Replace the paths with your own files and model name:
-
-```bash
-python setup.py \
-    --model_name <hugging-face-model-path> \
-    --private_seed /path/to/private_seed.parquet \
-    --public_seed /path/to/public_seed.parquet \
-    --dataset_size <dataset_size>
-```
-
-**Note:**
-
-* `private_seed` refers to documents that could contain private information.
-* `public_seed` refers to privacy-free documents that can be safely used for supervised fine-tuning (SFT).
 
 
 ### Training with SLURM (HPC clusters)
