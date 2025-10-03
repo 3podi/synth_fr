@@ -203,7 +203,7 @@ model_name = "3podi/Qwen3-4B-Instruct-2507-synth-fr"
 
 # Load model and tokenizer
 tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForCausalLM.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(model_name, dtype='bfloat16')
 
 # Build a text generation pipeline
 generator = pipeline("text-generation", model=model, tokenizer=tokenizer)
@@ -219,7 +219,7 @@ keywords = ", ".join(["Infection virale des voies respiratoires", "Maladie infla
 prompt = prompt.replace("{keywords}", keywords)
 
 # Generate
-outputs = generator(prompt, max_length=200, num_return_sequences=1, do_sample=True, top_p=0.9)
+outputs = generator(prompt, max_length=3000, num_return_sequences=1, do_sample=True, top_p=0.9)
 print(outputs[0]["generated_text"])
 ```
 
