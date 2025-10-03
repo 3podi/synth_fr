@@ -41,7 +41,7 @@ synth_fr-main/
 
 ### Environment Setup
 
-There are **two separate Conda environments** depending on the stage of the pipeline:
+There are **two separate Conda environments** for Linux systems depending on the stage of the pipeline:
 
 1. **Dataset Preparation Environment**  
    Defined in `xxxx.yml`.  
