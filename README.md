@@ -359,7 +359,3 @@ La patiente rapporte être tombée dans son domicile le 15/07/2024, entraînant 
 
 ### Conclusion
 Patiente de 42 ans admise pour fracture ouverte du pouce gauche et contusion du doigt index gauche suite à une chute. Prise en charge chirurgicale avec ostéosynthèse et débridement. Évolution favorable. Sortie le 20/07/2024 avec suivi ambulatoire prévu.
-
-
-
-
