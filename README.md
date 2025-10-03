@@ -4,13 +4,26 @@
 **Synth-FR** is a framework for generating, training, and evaluating large language models on **synthetic French medical reports**.  
 The project’s primary goal is to create a high-quality synthetic corpus for tasks such as **ICD-10 coding** using modern fine-tuning and reinforcement learning techniques.
 
-The pipeline involves pretraining on a seed of privacy-free documents, and then generating new reports from medical keywords extracted from, ideally, even private documents. For example, inside a hospital where private documents exist, they can be used to provide feedback to further improve generation without exposing sensitive data.
+The Synth-FR pipeline consists of several key stages:
 
-The repo includes pipelines for:
-- **Supervised Fine-Tuning (SFT)**
-- **Generation and scoring/filtering reports**
-- **Direct Preference Optimization (DPO)**
-- **Evaluation on downstream Classification tasks**
+1. **Supervised Fine-Tuning (SFT)**  
+   * A small **seed set of French medical reports** is used to fine-tune a base small generator model (4B parameters).
+
+2. **Generation**  
+   * Using linical keywords (e.g., extracted from private documents inside a hospital), the generator produces multiple synthetic candidate reports.  
+   * These reports mimic the structure and terminology of real discharge summaries, without leaking personal identifiers.  
+
+3. **Scoring**  
+   * An evaluator model compares real vs. synthetic reports using only floating-point similarity scores.  
+   * This ensures no raw text ever leaves the private side of the pipeline, maintaining strict privacy guarantees.  
+
+4. **Alignment with Direct Preference Optimization (DPO)**  
+   * Synthetic candidate pairs are ranked using the evaluator.  
+   * The generator is aligned via DPO, improving report quality and realism across successive iterations.  
+
+5. **Evaluation on Downstream Tasks**  
+   * Synthetic datasets are tested on downstream task:  
+     - **ICD-10 coding** (multi-label classification).  
 
 This framework is designed for use on **HPC clusters** with SLURM job scheduling as well as local experiments.
 
