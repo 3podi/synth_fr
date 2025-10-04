@@ -1,6 +1,0 @@
-defaults:
-  - default.yaml
-
-adapters_paths: [/lora/sft/wjksri4e]
-dataset: datasets/finance/model=wjksri4e_size=1500_step=sft/model=sentence-transformers-all-mpnet-base-v2_dpo.parquet
-tags: [dpo-1, finance]

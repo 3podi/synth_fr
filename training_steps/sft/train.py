@@ -35,12 +35,8 @@ def chunk_tokens_with_padding(example, padding_token, chunk_size=512, stride=448
         if chunk_len < chunk_size:
             pad_length = chunk_size - chunk_len
             chunk += [padding_token] * pad_length
-            #print('Len padded chunk: ', len(chunk))
-            #print('N token in un padded chunk: ', chunk_len)
             chunk_len += 1    #include eos token in the attention mask
-            #print('N tokens for loss: ', chunk_len)
-            #print('labels: ',chunk[:chunk_len])
-        
+            
         labels = chunk[:chunk_len] + [-100] * (chunk_size - chunk_len) #-100 to not compute loss on pad tokens
         
         chunks.append({
@@ -49,7 +45,6 @@ def chunk_tokens_with_padding(example, padding_token, chunk_size=512, stride=448
             "labels": labels,
         })
     return {"chunk": chunks}
-    #return chunks
     
 @hydra.main(version_base=None, config_path="./configs", config_name="default")
 def main(cfg: DictConfig):
