@@ -29,6 +29,18 @@ This framework is designed for use on **HPC clusters** with SLURM job scheduling
 
 ---
 
+**Resources on Hugging Face:**  
+All models and datasets for this project are available in this [HF collection](https://huggingface.co/collections/3podi/synth-fr-68e03a5bd90eab12babd4ecc), including:
+
+- **4B Qwen model** ready to use for reports generation.
+- **LoRA modules** for each DPO step, allowing fine-tuning at different stages of the pipeline.  
+- **Step-specific datasets** with 50K samples per DPO step.  
+- **MedGemma French dataset** with 300K samples, useful for distilling a model to generate reports from keywords.  
+
+These resources make it easy to experiment with any stage of the training and inference pipeline.
+
+---
+
 ## Structure
 
 ```
@@ -353,15 +365,3 @@ La patiente rapporte être tombée dans son domicile le 15/07/2024, entraînant 
 ### Conclusion
 Patiente de 42 ans admise pour fracture ouverte du pouce gauche et contusion du doigt index gauche suite à une chute. Prise en charge chirurgicale avec ostéosynthèse et débridement. Évolution favorable. Sortie le 20/07/2024 avec suivi ambulatoire prévu.
 ```
-
----
-
-**Resources on Hugging Face:**  
-All models and datasets for this project are available in this [HF collection](https://huggingface.co/collections/3podi/synth-fr-68e03a5bd90eab12babd4ecc), including:
-
-- **LoRA modules** for each DPO step, allowing fine-tuning at different stages of the pipeline.  
-- **Step-specific datasets** with 50K samples per DPO step.  
-- **MedGemma French dataset** with 300K samples, useful for distilling a model to generate reports from keywords.  
-
-These resources make it easy to experiment with any stage of the training and inference pipeline.
-
