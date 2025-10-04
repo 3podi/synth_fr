@@ -48,7 +48,7 @@ synth_fr-main/
   ├── environment_preprocessing.yml # Preprocessing / keywords extraction environment
   ├── environment.yml               # Training/generation conda environment definition
   ├── setup.py                      # Set up dataset and download from hf
-  ├── grid_*.py/.yaml               # Experiment pipelines scipts and configs (SFT, RL, etc.)
+  ├── grid_*.py/.yaml               # Experiment pipelines scipts and configs (SFT, RL)
   ├── launch/jz/                    # SLURM job scripts
   ├── training_steps/               # Training/generation scripts
   │   ├── sft/                      # Pre-Training (SFT)
