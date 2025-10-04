@@ -10,7 +10,7 @@ The Synth-FR pipeline consists of several key stages:
    * A small **seed set of French medical reports** is used to fine-tune a base small generator model.
 
 2. **Generation**  
-   * Using linical keywords (e.g., extracted from private documents inside a hospital), the generator produces multiple synthetic candidate reports.  
+   * Using clinical keywords (e.g., extracted from private documents inside a hospital), the generator produces multiple synthetic candidate reports.  
    * These reports mimic the structure and terminology of real discharge summaries, without leaking personal identifiers.  
 
 3. **Scoring**  
