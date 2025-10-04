@@ -214,8 +214,9 @@ python training_steps/classification/train.py --config training_steps/classifica
 ```
 
 The experiments compare the baseline model (Step0) with models further refined using Direct Preference Optimization (DPO) for up to three iterations.
-Performance is reported in terms of macro F1 on a curated private evaluation set that is distinct from the training and synthetic documents, ensuring the results reflect transferability beyond synthetic data.
+Performance is reported in terms of macro F1 on a curated private evaluation set that is distinct from the training/validation and synthetic documents, ensuring the results reflect transferability beyond synthetic data.
 The final column highlights the relative improvement of DPO3 over Step0.
+Results average over multiple runs.
 
 
 Results on 10k dataset
