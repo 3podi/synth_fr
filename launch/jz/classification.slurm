@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -t 3-00:00:00
-#SBATCH --gres=gpu:v100:1   # change to >1 if you want multiple GPUs
+#SBATCH --gres=gpu:v100:1 
 #SBATCH -N1
 #SBATCH -c1
 #SBATCH --mem=40000
